@@ -138,9 +138,14 @@ class SignupScreen extends GetWidget<SignupController> {
                           style:
                               CustomTextStyles.labelLargeMontOnPrimaryContainer,
                         ),
-                        Text(
-                          "lbl_log_in".tr,
-                          style: CustomTextStyles.labelLargeMontPrimary,
+                        GestureDetector(
+                          onTap: () {
+                            Get.toNamed(AppRoutes.loginScreen);
+                          },
+                          child: Text(
+                            "lbl_log_in".tr,
+                            style: CustomTextStyles.labelLargeMontPrimary,
+                          ),
                         ),
                       ],
                     ),

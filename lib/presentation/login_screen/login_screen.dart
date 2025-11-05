@@ -140,7 +140,6 @@ class LoginScreen extends GetWidget<LoginController> {
                           SizedBox(height: 60.h),
                           Obx(() {
                             return CustomElevatedButton(
-                              
                               text: "lbl_log_in".tr,
                               margin: EdgeInsets.only(right: 4.h),
                               buttonStyle:
@@ -329,7 +328,7 @@ class LoginScreen extends GetWidget<LoginController> {
 
   /// Navigates to the forgetPasswordOneScreen when the action is triggered.
   onTapLogin() {
-    Get.toNamed(AppRoutes.forgetPasswordOneScreen);
+    Get.toNamed(AppRoutes.loginTwoScreen);
   }
 
   onTapBtnGoogleone() async {
