@@ -12,7 +12,7 @@ class OtpController extends GetxController with CodeAutoFill {
   Rx<TextEditingController> otpController = TextEditingController().obs;
 
   Rx<OtpModel> otpModelObj = OtpModel().obs;
-
+  Rx<bool> isCompleted = false.obs;
   @override
   void codeUpdated() {
     otpController.value.text = code ?? '';

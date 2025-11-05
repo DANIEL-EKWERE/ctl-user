@@ -38,11 +38,21 @@ class NewPasswordOneScreen extends GetWidget<NewPasswordOneController> {
               Spacer(),
               CustomOutlinedButton(
                 text: "lbl_submit".tr,
-                buttonTextStyle: CustomTextStyles.titleSmallMontGray900,
+                buttonStyle: CustomButtonStyles.fillPrimary,
+                buttonTextStyle: CustomTextStyles.titleSmallMontOnPrimaryBold,
                 onPressed: () {
-                  onTapSubmit();
+                  controller.passwordController.text.isNotEmpty ||
+                          controller.newpasswordController.text.isNotEmpty ||
+                          (controller.passwordController.text.isNotEmpty !=
+                              controller.newpasswordController.text.isNotEmpty)
+                      ? onTapSubmit()
+                      : Get.snackbar(
+                        'Opps',
+                        'Fields can\'t be empty and password must be same',
+                      );
                 },
               ),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -78,7 +88,7 @@ class NewPasswordOneScreen extends GetWidget<NewPasswordOneController> {
         children: [
           Text(
             "lbl_new_password".tr,
-            style: CustomTextStyles.labelMediumMontGray900,
+            style: CustomTextStyles.bodyMediumMontGray900,
           ),
           Obx(
             () => CustomTextFormField(
@@ -119,7 +129,7 @@ class NewPasswordOneScreen extends GetWidget<NewPasswordOneController> {
         children: [
           Text(
             "msg_confrim_password".tr,
-            style: CustomTextStyles.labelMediumMontGray900,
+            style: CustomTextStyles.bodyMediumMontGray900,
           ),
           Obx(
             () => CustomTextFormField(
@@ -158,6 +168,6 @@ class NewPasswordOneScreen extends GetWidget<NewPasswordOneController> {
 
   /// Navigates to the newPasswordTwoScreen when the action is triggered.
   onTapSubmit() {
-    Get.toNamed(AppRoutes.newPasswordTwoScreen);
+    Get.toNamed(AppRoutes.loginScreen);
   }
 }

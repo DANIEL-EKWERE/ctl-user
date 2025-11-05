@@ -159,6 +159,7 @@ class SignupScreen extends GetWidget<SignupController> {
     return Padding(
       padding: EdgeInsets.only(right: 2.h),
       child: CustomTextFormField(
+        textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
         controller: controller.nameController,
         hintText: "lbl_frist_name".tr,
         contentPadding: EdgeInsets.all(16.h),
@@ -177,6 +178,7 @@ class SignupScreen extends GetWidget<SignupController> {
     return Padding(
       padding: EdgeInsets.only(right: 2.h),
       child: CustomTextFormField(
+        textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
         controller: controller.lastNameController,
         hintText: "lbl_last_name".tr,
         contentPadding: EdgeInsets.all(16.h),
@@ -212,6 +214,7 @@ class SignupScreen extends GetWidget<SignupController> {
     return Padding(
       padding: EdgeInsets.only(right: 2.h),
       child: CustomTextFormField(
+        textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
         controller: controller.emailController,
         hintText: "lbl_email".tr,
         textInputType: TextInputType.emailAddress,
@@ -230,19 +233,39 @@ class SignupScreen extends GetWidget<SignupController> {
   Widget _buildPassword() {
     return Padding(
       padding: EdgeInsets.only(right: 2.h),
-      child: CustomTextFormField(
-        controller: controller.passwordController,
-        hintText: "lbl_password".tr,
-        textInputType: TextInputType.visiblePassword,
-        obscureText: true,
-        contentPadding: EdgeInsets.all(16.h),
-        validator: (value) {
-          if (value == null || (!isValidPassword(value, isRequired: true))) {
-            return "err_msg_please_enter_valid_password".tr;
-          }
-          return null;
-        },
-      ),
+      child: Obx(() {
+        return CustomTextFormField(
+          suffix: Container(
+            margin: EdgeInsets.only(right: 22.h, left: 22.h),
+            child: CustomImageView(
+              onTap: () {
+                controller.obscurePassword.value =
+                    !controller.obscurePassword.value;
+                controller.update();
+              },
+              imagePath:
+                  controller.obscurePassword.value
+                      ? ImageConstant.imgEye
+                      : ImageConstant.imgEyecrossed1,
+              height: 4.h,
+              width: 4.h,
+              fit: BoxFit.contain,
+            ),
+          ),
+          textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+          controller: controller.passwordController,
+          hintText: "lbl_password".tr,
+          textInputType: TextInputType.visiblePassword,
+          obscureText: controller.obscurePassword.value,
+          contentPadding: EdgeInsets.all(16.h),
+          validator: (value) {
+            if (value == null || (!isValidPassword(value, isRequired: true))) {
+              return "err_msg_please_enter_valid_password".tr;
+            }
+            return null;
+          },
+        );
+      }),
     );
   }
 
@@ -250,20 +273,40 @@ class SignupScreen extends GetWidget<SignupController> {
   Widget _buildConfirmpassword() {
     return Padding(
       padding: EdgeInsets.only(right: 2.h),
-      child: CustomTextFormField(
-        controller: controller.confirmpasswordController,
-        hintText: "msg_confirm_password".tr,
-        textInputAction: TextInputAction.done,
-        textInputType: TextInputType.visiblePassword,
-        obscureText: true,
-        contentPadding: EdgeInsets.all(16.h),
-        validator: (value) {
-          if (value == null || (!isValidPassword(value, isRequired: true))) {
-            return "err_msg_please_enter_valid_password".tr;
-          }
-          return null;
-        },
-      ),
+      child: Obx(() {
+        return CustomTextFormField(
+          suffix: Container(
+            margin: EdgeInsets.only(right: 22.h, left: 22.h),
+            child: CustomImageView(
+              onTap: () {
+                controller.obscurePassword1.value =
+                    !controller.obscurePassword1.value;
+                controller.update();
+              },
+              imagePath:
+                  controller.obscurePassword1.value
+                      ? ImageConstant.imgEye
+                      : ImageConstant.imgEyecrossed1,
+              height: 4.h,
+              width: 4.h,
+              fit: BoxFit.contain,
+            ),
+          ),
+          textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+          controller: controller.confirmpasswordController,
+          hintText: "msg_confirm_password".tr,
+          textInputAction: TextInputAction.done,
+          textInputType: TextInputType.visiblePassword,
+          obscureText: controller.obscurePassword1.value,
+          contentPadding: EdgeInsets.all(16.h),
+          validator: (value) {
+            if (value == null || (!isValidPassword(value, isRequired: true))) {
+              return "err_msg_please_enter_valid_password".tr;
+            }
+            return null;
+          },
+        );
+      }),
     );
   }
 
@@ -271,59 +314,92 @@ class SignupScreen extends GetWidget<SignupController> {
   Widget _buildRowagreeto() {
     return SizedBox(
       width: double.maxFinite,
-      child: Row(
-        children: [
-          Obx(
-            () => CustomCheckboxButton(
-              text: "lbl_agree_to".tr,
-              value: controller.agreetoone.value,
-              onChange: (value) {
-                controller.agreetoone.value = value;
-              },
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            Obx(
+              () => CustomCheckboxButton(
+                text: "lbl_agree_to".tr,
+                value: controller.agreetoone.value,
+                onChange: (value) {
+                  controller.agreetoone.value = value;
+                },
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 4.h),
-            child: Text(
-              "msg_terms_of_services".tr,
-              style: CustomTextStyles.labelMediumMontBlueA400,
+            Padding(
+              padding: EdgeInsets.only(left: 4.h),
+              child: Text(
+                "msg_terms_of_services".tr,
+                style: CustomTextStyles.labelMediumMontBlueA400,
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 4.h),
-            child: Text(
-              "lbl".tr,
-              style: CustomTextStyles.labelMediumMontBlack900Medium,
+            Padding(
+              padding: EdgeInsets.only(left: 4.h),
+              child: Text(
+                "lbl".tr,
+                style: CustomTextStyles.labelMediumMontBlack900Medium,
+              ),
             ),
-          ),
-          Padding(
-            padding: EdgeInsets.only(left: 4.h),
-            child: Text(
-              "lbl_privacy_policy".tr,
-              style: CustomTextStyles.labelMediumMontBlueA400,
+            Padding(
+              padding: EdgeInsets.only(left: 4.h),
+              child: Text(
+                "lbl_privacy_policy".tr,
+                style: CustomTextStyles.labelMediumMontBlueA400,
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
 
   /// Section Widget
   Widget _buildSignup() {
-    return CustomOutlinedButton(
-      text: "lbl_sign_up".tr,
-      margin: EdgeInsets.only(right: 2.h),
-      buttonStyle: CustomButtonStyles.outlineOnPrimaryContainer,
-      buttonTextStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer,
-      onPressed: () {
-        onTapSignup();
-      },
+    return Obx(
+      () => CustomOutlinedButton(
+        text: "lbl_sign_up".tr,
+        margin: EdgeInsets.only(right: 2.h),
+        buttonStyle:
+            (controller.agreetoone.value ||
+                    controller.nameController.text.isNotEmpty ||
+                    controller.lastNameController.text.isNotEmpty ||
+                    controller.phoneNumberController.text.isNotEmpty ||
+                    controller.emailController.text.isNotEmpty ||
+                    controller.passwordController.text.isNotEmpty ||
+                    controller.confirmpasswordController.text.isNotEmpty)
+                ? CustomButtonStyles.fillPrimary
+                : CustomButtonStyles.outlineOnPrimaryContainer,
+        buttonTextStyle:
+            (controller.agreetoone.value ||
+                    controller.nameController.text.isNotEmpty ||
+                    controller.lastNameController.text.isNotEmpty ||
+                    controller.phoneNumberController.text.isNotEmpty ||
+                    controller.emailController.text.isNotEmpty ||
+                    controller.passwordController.text.isNotEmpty ||
+                    controller.confirmpasswordController.text.isNotEmpty)
+                ? CustomTextStyles.titleSmallMontOnPrimaryExtraBold
+                : CustomTextStyles.titleSmallMontOnPrimaryContainer,
+        onPressed: () {
+          onTapSignup();
+        },
+      ),
     );
   }
 
   /// Navigates to the signupOneScreen when the action is triggered.
   onTapSignup() {
-    Get.toNamed(AppRoutes.signupOneScreen);
+    //textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+    //Get.toNamed(AppRoutes.signupOneScreen);
+    (controller.agreetoone.value ||
+            controller.nameController.text.isNotEmpty ||
+            controller.lastNameController.text.isNotEmpty ||
+            controller.phoneNumberController.text.isNotEmpty ||
+            controller.emailController.text.isNotEmpty ||
+            controller.passwordController.text.isNotEmpty ||
+            controller.confirmpasswordController.text.isNotEmpty)
+        ? Get.toNamed(AppRoutes.otpScreen)
+        : Get.snackbar('Error', 'Please fill all fields and agree to terms');
   }
 
   onTapBtnGoogleone() async {

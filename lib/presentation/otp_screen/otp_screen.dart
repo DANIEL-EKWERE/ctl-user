@@ -41,7 +41,18 @@ class OtpScreen extends GetWidget<OtpController> {
                   () => CustomPinCodeTextField(
                     context: Get.context!,
                     controller: controller.otpController.value,
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      print(value);
+                      print(value.length);
+                      print(controller.otpController.value.text);
+                      if (value.length == 4) {
+                        controller.isCompleted.value = true;
+                        controller.update();
+                      } else {
+                        controller.isCompleted.value = false;
+                        controller.update();
+                      }
+                    },
                   ),
                 ),
               ),
@@ -76,14 +87,24 @@ class OtpScreen extends GetWidget<OtpController> {
                 ),
               ),
               Spacer(),
-              CustomOutlinedButton(
-                text: "lbl_verify".tr,
-                margin: EdgeInsets.only(left: 10.h, right: 8.h),
-                buttonTextStyle: CustomTextStyles.titleSmallMontGray900Bold_1,
-                onPressed: () {
-                  onTapVerify();
-                },
-              ),
+              Obx(() {
+                return CustomOutlinedButton(
+                  buttonStyle:
+                      controller.isCompleted.value
+                          ? CustomButtonStyles.fillPrimary
+                          : CustomButtonStyles.outlineOnPrimaryContainer,
+                  text: "lbl_verify".tr,
+                  margin: EdgeInsets.only(left: 10.h, right: 8.h),
+                  buttonTextStyle:
+                      controller.isCompleted.value
+                          ? CustomTextStyles.titleSmallMontOnPrimaryExtraBold
+                          : CustomTextStyles.titleSmallMontGray900Bold_1,
+                  onPressed: () {
+                   controller.isCompleted.value ? onTapVerify() : null;
+                  },
+                );
+              }),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -116,6 +137,6 @@ class OtpScreen extends GetWidget<OtpController> {
 
   /// Navigates to the otpVerificationScreen when the action is triggered.
   onTapVerify() {
-    Get.toNamed(AppRoutes.otpVerificationScreen);
+    Get.toNamed(AppRoutes.loginScreen);
   }
 }

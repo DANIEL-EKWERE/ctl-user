@@ -46,6 +46,8 @@ class ForgetPasswordOneScreen extends GetWidget<ForgetPasswordOneController> {
                     hintStyle: CustomTextStyles.titleSmallMontGray900_1,
                     textInputAction: TextInputAction.done,
                     textInputType: TextInputType.emailAddress,
+                    textStyle:
+                        CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
                     contentPadding: EdgeInsets.all(16.h),
                     borderDecoration: TextFormFieldStyleHelper.outlineGrayTL8,
                     validator: (value) {
@@ -59,11 +61,19 @@ class ForgetPasswordOneScreen extends GetWidget<ForgetPasswordOneController> {
                   Spacer(),
                   CustomOutlinedButton(
                     text: "lbl_verify".tr,
-                    buttonTextStyle: CustomTextStyles.titleSmallMontGray900,
+                    buttonStyle: CustomButtonStyles.fillPrimary,
+                    buttonTextStyle:
+                        CustomTextStyles.titleSmallMontOnPrimaryBold,
                     onPressed: () {
-                      onTapVerify();
+                      controller.emailController.text.isNotEmpty
+                          ? onTapVerify()
+                          : Get.snackbar(
+                            'Error',
+                            "Enter your Email to proceed!!!",
+                          );
                     },
                   ),
+                  SizedBox(height: 20),
                 ],
               ),
             ),
@@ -98,6 +108,6 @@ class ForgetPasswordOneScreen extends GetWidget<ForgetPasswordOneController> {
 
   /// Navigates to the forgetPasswordTwoScreen when the action is triggered.
   onTapVerify() {
-    Get.toNamed(AppRoutes.forgetPasswordTwoScreen);
+    Get.toNamed(AppRoutes.otpVerificationScreen);
   }
 }

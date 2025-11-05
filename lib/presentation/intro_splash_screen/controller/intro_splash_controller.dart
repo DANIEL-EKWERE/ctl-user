@@ -13,7 +13,8 @@ class IntroSplashController extends GetxController {
   @override
   void onReady() {
     Future.delayed(const Duration(milliseconds: 3000), () {
-      Get.offNamed(AppRoutes.splashPageOneScreen);
+     // Get.offNamed(AppRoutes.splashPageOneScreen);
+      Get.offNamed(AppRoutes.splashPageTwoScreen);
     });
   }
 }

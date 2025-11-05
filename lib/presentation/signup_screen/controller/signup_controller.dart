@@ -29,6 +29,8 @@ class SignupController extends GetxController {
       CountryPickerUtils.getCountryByPhoneCode('234').obs;
 
   Rx<bool> agreetoone = false.obs;
+  Rx<bool> obscurePassword = true.obs;
+  Rx<bool> obscurePassword1 = true.obs;
 
   SelectionPopupModel? selectedDropDownValue;
 

@@ -1,4 +1,5 @@
 import 'package:ctluser/widgets/app_bar/appabr_subtitle_one.dart';
+import 'package:ctluser/widgets/custom_outlined_button.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../theme/custom_button_style.dart';
@@ -40,7 +41,15 @@ class OtpVerificationScreen extends GetWidget<OtpVerificationController> {
                   () => CustomPinCodeTextField(
                     context: Get.context!,
                     controller: controller.otpController.value,
-                    onChanged: (value) {},
+                    onChanged: (value) {
+                      if (value.length == 4) {
+                        controller.isCompleted.value = true;
+                        controller.update();
+                      } else {
+                        controller.isCompleted.value = false;
+                        controller.update();
+                      }
+                    },
                   ),
                 ),
               ),
@@ -66,16 +75,34 @@ class OtpVerificationScreen extends GetWidget<OtpVerificationController> {
                 ),
               ),
               Spacer(),
-              CustomElevatedButton(
-                text: "lbl_verify".tr,
-                margin: EdgeInsets.only(left: 10.h, right: 8.h),
-                buttonStyle: CustomButtonStyles.fillPrimary,
-                buttonTextStyle:
-                    CustomTextStyles.titleSmallMontOnPrimaryExtraBold,
-                onPressed: () {
-                  onTapVerify();
-                },
-              ),
+              // CustomElevatedButton(
+              //   text: "lbl_verify".tr,
+              //   margin: EdgeInsets.only(left: 10.h, right: 8.h),
+              //   buttonStyle: CustomButtonStyles.fillPrimary,
+              //   buttonTextStyle:
+              //       CustomTextStyles.titleSmallMontOnPrimaryExtraBold,
+              //   onPressed: () {
+              //     onTapVerify();
+              //   },
+              // ),
+              Obx(() {
+                return CustomOutlinedButton(
+                  buttonStyle:
+                      controller.isCompleted.value
+                          ? CustomButtonStyles.fillPrimary
+                          : CustomButtonStyles.outlineOnPrimaryContainer,
+                  text: "lbl_verify".tr,
+                  margin: EdgeInsets.only(left: 10.h, right: 8.h),
+                  buttonTextStyle:
+                      controller.isCompleted.value
+                          ? CustomTextStyles.titleSmallMontOnPrimaryExtraBold
+                          : CustomTextStyles.titleSmallMontGray900Bold_1,
+                  onPressed: () {
+                    controller.isCompleted.value ? onTapVerify() : null;
+                  },
+                );
+              }),
+              SizedBox(height: 20),
             ],
           ),
         ),
@@ -108,6 +135,6 @@ class OtpVerificationScreen extends GetWidget<OtpVerificationController> {
 
   /// Navigates to the loginScreen when the action is triggered.
   onTapVerify() {
-    Get.toNamed(AppRoutes.loginScreen);
+    Get.toNamed(AppRoutes.newPasswordOneScreen);
   }
 }

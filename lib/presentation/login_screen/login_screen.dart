@@ -53,6 +53,9 @@ class LoginScreen extends GetWidget<LoginController> {
                             child: CustomTextFormField(
                               controller: controller.emailController,
                               hintText: "lbl_email".tr,
+                              textStyle:
+                                  CustomTextStyles
+                                      .titleSmallMontOnPrimaryContainer_1,
                               textInputType: TextInputType.emailAddress,
                               contentPadding: EdgeInsets.all(16.h),
                               validator: (value) {
@@ -69,28 +72,53 @@ class LoginScreen extends GetWidget<LoginController> {
                             padding: EdgeInsets.only(right: 4.h),
                             child: Obx(
                               () => CustomTextFormField(
-                                controller: controller.visibleoneController,
-                                textInputAction: TextInputAction.done,
-                                suffix: InkWell(
-                                  onTap: () {
-                                    controller.isShowPassword.value =
-                                        !controller.isShowPassword.value;
-                                  },
-                                  child: Container(
-                                    margin: EdgeInsets.fromLTRB(
-                                      16.h,
-                                      18.h,
-                                      14.h,
-                                      18.h,
-                                    ),
-                                    child: CustomImageView(
-                                      imagePath: ImageConstant.imgVisible,
-                                      height: 12.h,
-                                      width: 14.h,
-                                      fit: BoxFit.contain,
-                                    ),
+                                suffix: Container(
+                                  margin: EdgeInsets.only(
+                                    right: 18.h,
+                                    left: 18.h,
+                                  ),
+
+                                  child: CustomImageView(
+                                    onTap: () {
+                                      controller.isShowPassword.value =
+                                          !controller.isShowPassword.value;
+                                      controller.update();
+                                    },
+                                    imagePath:
+                                        controller.isShowPassword.value
+                                            ? ImageConstant.imgEye
+                                            : ImageConstant.imgEyecrossed1,
+                                    height: 20.h,
+                                    width: 20.h,
+                                    fit: BoxFit.contain,
                                   ),
                                 ),
+                                hintText: 'Password',
+                                controller: controller.visibleoneController,
+                                textInputAction: TextInputAction.done,
+                                // suffix: InkWell(
+                                //   onTap: () {
+                                //     controller.isShowPassword.value =
+                                //         !controller.isShowPassword.value;
+                                //   },
+                                //   child: Container(
+                                //     margin: EdgeInsets.fromLTRB(
+                                //       16.h,
+                                //       18.h,
+                                //       14.h,
+                                //       18.h,
+                                //     ),
+                                //     child: CustomImageView(
+                                //       imagePath: ImageConstant.imgVisible,
+                                //       height: 12.h,
+                                //       width: 14.h,
+                                //       fit: BoxFit.contain,
+                                //     ),
+                                //   ),
+                                // ),
+                                textStyle:
+                                    CustomTextStyles
+                                        .titleSmallMontOnPrimaryContainer_1,
                                 suffixConstraints: BoxConstraints(
                                   maxHeight: 50.h,
                                 ),
@@ -103,24 +131,50 @@ class LoginScreen extends GetWidget<LoginController> {
                                 ),
                                 borderDecoration:
                                     TextFormFieldStyleHelper.outlineGray1,
-                                fillColor: appTheme.gray500,
+                                //fillColor: appTheme.gray500,
                               ),
                             ),
                           ),
-                          SizedBox(height: 20.h),
+                          SizedBox(height: 35.h),
                           _buildKeepmeloginone(),
-                          SizedBox(height: 40.h),
-                          CustomElevatedButton(
-                            text: "lbl_log_in".tr,
-                            margin: EdgeInsets.only(right: 4.h),
-                            buttonStyle: CustomButtonStyles.fillPrimary,
-                            buttonTextStyle:
-                                CustomTextStyles.titleSmallMontOnPrimaryBold,
-                            onPressed: () {
-                              onTapLogin();
-                            },
-                          ),
-                          SizedBox(height: 40.h),
+                          SizedBox(height: 60.h),
+                          Obx(() {
+                            return CustomElevatedButton(
+                              
+                              text: "lbl_log_in".tr,
+                              margin: EdgeInsets.only(right: 4.h),
+                              buttonStyle:
+                                  (controller.emailController.text.isNotEmpty ||
+                                          controller
+                                              .visibleoneController
+                                              .text
+                                              .isNotEmpty)
+                                      ? CustomButtonStyles.fillPrimary
+                                      : CustomButtonStyles
+                                          .outlineOnPrimaryContainer,
+                              buttonTextStyle:
+                                  (controller.emailController.text.isNotEmpty ||
+                                          controller
+                                              .visibleoneController
+                                              .text
+                                              .isNotEmpty ||
+                                          controller.keepmeloginone.value)
+                                      ? CustomTextStyles
+                                          .titleSmallMontOnPrimaryBold
+                                      : CustomTextStyles.titleSmallMontGray900,
+                              onPressed: () {
+                                controller.emailController.text.isNotEmpty ||
+                                        controller
+                                            .visibleoneController
+                                            .text
+                                            .isNotEmpty ||
+                                        controller.keepmeloginone.value
+                                    ? onTapLogin()
+                                    : null;
+                              },
+                            );
+                          }),
+                          SizedBox(height: 60.h),
                           _buildRowvectorone(),
                           SizedBox(height: 30.h),
                           Container(
@@ -202,12 +256,38 @@ class LoginScreen extends GetWidget<LoginController> {
   /// Section Widget
   Widget _buildKeepmeloginone() {
     return Obx(
-      () => CustomCheckboxButton(
-        text: "lbl_keep_me_log_in".tr,
-        value: controller.keepmeloginone.value,
-        onChange: (value) {
-          controller.keepmeloginone.value = value;
-        },
+      () => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            CustomCheckboxButton(
+              text: "lbl_keep_me_log_in".tr,
+              value: controller.keepmeloginone.value,
+              onChange: (value) {
+                controller.keepmeloginone.value = value;
+              },
+            ),
+            Align(
+              alignment: Alignment.center,
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Get.toNamed(AppRoutes.forgetPasswordOneScreen);
+                    },
+                    child: Text(
+                      "forgot passoword".tr,
+                      style: CustomTextStyles.labelLargeMontPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -227,6 +307,7 @@ class LoginScreen extends GetWidget<LoginController> {
               child: Divider(color: appTheme.gray700),
             ),
           ),
+          SizedBox(width: 10),
           Align(
             alignment: Alignment.center,
             child: Text(
@@ -234,6 +315,7 @@ class LoginScreen extends GetWidget<LoginController> {
               style: CustomTextStyles.labelMediumMontBlack900Medium,
             ),
           ),
+          SizedBox(width: 10),
           Expanded(
             child: Padding(
               padding: EdgeInsets.only(bottom: 6.h),
