@@ -1,10 +1,17 @@
 // TODO Implement this library.
+import 'package:ctluser/presentation/detail_restaurants_review_vone_screen/controller/detail_restaurants_review_vone_controller.dart';
+import 'package:ctluser/presentation/detail_restaurants_review_vone_screen/models/listtoday16fort_item_model.dart';
+import 'package:ctluser/presentation/detail_restaurants_review_vone_screen/widgets/listtoday16fort_item_widget.dart';
 import 'package:flutter/material.dart';
 import '../../core/app_export.dart';
 import '../../theme/custom_button_style.dart';
 import '../../widgets/custom_elevated_button.dart';
 import 'controller/detail_restaurants_vone_controller.dart';
 import 'detail_tab_page.dart'; // ignore_for_file: must_be_immutable
+
+DetailRestaurantsReviewVoneController controller1 = Get.put(
+  DetailRestaurantsReviewVoneController(),
+);
 
 class DetailRestaurantsVoneScreen
     extends GetWidget<DetailRestaurantsVoneController> {
@@ -45,7 +52,10 @@ class DetailRestaurantsVoneScreen
                           height: 1152.h,
                           child: TabBarView(
                             controller: controller.tabviewController,
-                            children: [DetailTabPage(), DetailTabPage()],
+                            children: [
+                              DetailTabPage(),
+                              _buildListtoday16fort(),
+                            ],
                           ),
                         ),
                       ],
@@ -55,6 +65,46 @@ class DetailRestaurantsVoneScreen
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildListtoday16fort() {
+    return Padding(
+      padding: EdgeInsets.only(left: 38.h, right: 30.h, top: 30.h),
+      child: Obx(
+        () => ListView.separated(
+          padding: EdgeInsets.zero,
+          physics: NeverScrollableScrollPhysics(),
+          shrinkWrap: true,
+          separatorBuilder: (context, index) {
+            return Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0.h),
+              child: Divider(
+                height: 1.h,
+                thickness: 1.h,
+                color: appTheme.gray100,
+              ),
+            );
+          },
+          itemCount:
+              controller1
+                  .detailRestaurantsReviewVoneModelObj
+                  .value
+                  .listtoday16fortItemList
+                  .value
+                  .length,
+          itemBuilder: (context, index) {
+            Listtoday16fortItemModel model =
+                controller1
+                    .detailRestaurantsReviewVoneModelObj
+                    .value
+                    .listtoday16fortItemList
+                    .value[index];
+            return Listtoday16fortItemWidget(model);
+          },
         ),
       ),
     );

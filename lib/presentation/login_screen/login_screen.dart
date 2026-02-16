@@ -94,7 +94,7 @@ class LoginScreen extends GetWidget<LoginController> {
                                   ),
                                 ),
                                 hintText: 'Password',
-                                controller: controller.visibleoneController,
+                                controller: controller.passwordController,
                                 textInputAction: TextInputAction.done,
                                 // suffix: InkWell(
                                 //   onTap: () {
@@ -145,7 +145,7 @@ class LoginScreen extends GetWidget<LoginController> {
                               buttonStyle:
                                   (controller.emailController.text.isNotEmpty ||
                                           controller
-                                              .visibleoneController
+                                              .passwordController
                                               .text
                                               .isNotEmpty)
                                       ? CustomButtonStyles.fillPrimary
@@ -154,7 +154,7 @@ class LoginScreen extends GetWidget<LoginController> {
                               buttonTextStyle:
                                   (controller.emailController.text.isNotEmpty ||
                                           controller
-                                              .visibleoneController
+                                              .passwordController
                                               .text
                                               .isNotEmpty ||
                                           controller.keepmeloginone.value)
@@ -164,7 +164,7 @@ class LoginScreen extends GetWidget<LoginController> {
                               onPressed: () {
                                 controller.emailController.text.isNotEmpty ||
                                         controller
-                                            .visibleoneController
+                                            .passwordController
                                             .text
                                             .isNotEmpty ||
                                         controller.keepmeloginone.value
@@ -328,7 +328,8 @@ class LoginScreen extends GetWidget<LoginController> {
 
   /// Navigates to the forgetPasswordOneScreen when the action is triggered.
   onTapLogin() {
-    Get.toNamed(AppRoutes.loginTwoScreen);
+    // Get.toNamed(AppRoutes.loginThreeScreen);
+    controller.login();
   }
 
   onTapBtnGoogleone() async {

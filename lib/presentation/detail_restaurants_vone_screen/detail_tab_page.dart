@@ -69,7 +69,12 @@ class DetailTabPage extends StatelessWidget {
                         .value
                         .listnamemarketItemList
                         .value[index];
-                return ListnamemarketItemWidget(model);
+                return GestureDetector(
+                  onTap: () {
+                    Get.toNamed(AppRoutes.loginSixScreen);
+                  },
+                  child: ListnamemarketItemWidget(model),
+                );
               },
             ),
           ),

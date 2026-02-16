@@ -1,4 +1,6 @@
 // TODO Implement this library.
+import 'package:ctluser/presentation/signup_screen/models/country_model.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:country_pickers/country.dart';
 import '../../core/app_export.dart';
@@ -13,12 +15,27 @@ import '../../widgets/custom_outlined_button.dart';
 import '../../widgets/custom_phone_number.dart';
 import '../../widgets/custom_text_form_field.dart';
 import 'controller/signup_controller.dart';
+import 'dart:developer' as myLog;
 
 // ignore_for_file: must_be_immutable
-class SignupScreen extends GetWidget<SignupController> {
+SignupController controller = Get.put(SignupController());
+
+class SignupScreen extends StatefulWidget {
   SignupScreen({Key? key}) : super(key: key);
 
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
   GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    controller.fetchCountries();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -62,19 +79,164 @@ class SignupScreen extends GetWidget<SignupController> {
                     SizedBox(height: 20.h),
                     _buildEmail(),
                     SizedBox(height: 20.h),
+                    // Padding(
+                    //   padding: EdgeInsets.only(right: 2.h),
+                    //   child: CustomDropDown(
+                    //     hintText: "lbl_country".tr,
+                    //     hintStyle:
+                    //         CustomTextStyles.titleSmallMontOnPrimaryContainer_2,
+                    //     items:
+                    //         controller
+                    //             .signupModelObj
+                    //             .value
+                    //             .dropdownItemList
+                    //             .value,
+                    //     contentPadding: EdgeInsets.all(16.h),
+                    //   ),
+                    // ),
                     Padding(
-                      padding: EdgeInsets.only(right: 2.h),
-                      child: CustomDropDown(
-                        hintText: "lbl_country".tr,
-                        hintStyle:
-                            CustomTextStyles.titleSmallMontOnPrimaryContainer_2,
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        //horizontal: 5.0,
+                      ),
+                      child: DropdownSearch<CountryData>(
+                        onChanged: (value) async {
+                          setState(() {
+                            controller.selectedCountry1 = value!.name;
+                            controller.selectedCountryId = value.id;
+                          });
+                          // print('selected item is: ${controller.selectedCountry1}');
+                          // print(
+                          //     'selected item Id is: ${controller.selectedCountryId}');
+
+                          assert(
+                            controller.selectedCountry1 != null,
+                            'Selected country should not be null',
+                          );
+
+                          //await controller.fetchStates();
+                          myLog.log(
+                            'Selected country: ${controller.selectedCountry1}',
+                          );
+                        },
+                        selectedItem: controller.selectedCountryx,
+                        suffixProps: const DropdownSuffixProps(),
+                        compareFn: (item1, item2) {
+                          return item1 == item2;
+                        },
+
+                        decoratorProps: const DropDownDecoratorProps(
+                          baseStyle: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Color(0xffF5F5F5),
+                            alignLabelWithHint: true,
+                            suffixIconColor: Color(0xff004BFD),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                style: BorderStyle.solid,
+                                color: Color(0xff004BFD),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(8),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                style: BorderStyle.solid,
+                                color: Color(0xffD9D9D9),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                style: BorderStyle.solid,
+                                color: Color(0xffD9D9D9),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        dropdownBuilder: (context, selectedItem) {
+                          if (selectedItem != null) {
+                            return Text(selectedItem.name!);
+                          } else {
+                            return Text(
+                              'Enter Your Country',
+                              style: TextStyle(
+                                color: Colors.grey[300],
+                                fontSize: 16,
+                              ),
+                            );
+                          }
+                        },
                         items:
-                            controller
-                                .signupModelObj
-                                .value
-                                .dropdownItemList!
-                                .value,
-                        contentPadding: EdgeInsets.all(16.h),
+                            (f, cs) =>
+                                controller.isCountryLoading.value
+                                    ? []
+                                    : controller.countryDataList,
+                        //
+                        itemAsString: (item) {
+                          return item.name ?? '';
+                        },
+                        popupProps: PopupProps.menu(
+                          showSelectedItems: true,
+                          searchDelay: const Duration(seconds: 0),
+                          emptyBuilder: (context, searchEntry) {
+                            return controller.isCountryLoading.value
+                                ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xff004BFD),
+                                  ),
+                                )
+                                : const Center(
+                                  child: Text(
+                                    'No countries found',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontFamily: 'Poppins',
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                          },
+                          title: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              'Search Country',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          onDismissed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("move to the next item"),
+                              ),
+                            );
+                            myLog.log('Next items found.');
+                          },
+                          onItemsLoaded: (value) {
+                            myLog.log(
+                              'Items loaded: ${value.length} items found.',
+                            );
+                          },
+                          scrollbarProps: const ScrollbarProps(),
+                          showSearchBox: true,
+                          searchFieldProps: const TextFieldProps(),
+                          // disabledItemFn: (item) => item == 'Item 3',
+                          fit: FlexFit.loose,
+                        ),
                       ),
                     ),
                     SizedBox(height: 20.h),
@@ -252,8 +414,8 @@ class SignupScreen extends GetWidget<SignupController> {
                   controller.obscurePassword.value
                       ? ImageConstant.imgEye
                       : ImageConstant.imgEyecrossed1,
-              height: 4.h,
-              width: 4.h,
+              height: 16.h,
+              width: 16.h,
               fit: BoxFit.contain,
             ),
           ),
@@ -292,8 +454,8 @@ class SignupScreen extends GetWidget<SignupController> {
                   controller.obscurePassword1.value
                       ? ImageConstant.imgEye
                       : ImageConstant.imgEyecrossed1,
-              height: 4.h,
-              width: 4.h,
+              height: 16.h,
+              width: 16.h,
               fit: BoxFit.contain,
             ),
           ),
@@ -403,7 +565,8 @@ class SignupScreen extends GetWidget<SignupController> {
             controller.emailController.text.isNotEmpty ||
             controller.passwordController.text.isNotEmpty ||
             controller.confirmpasswordController.text.isNotEmpty)
-        ? Get.toNamed(AppRoutes.otpScreen)
+        //? //Get.toNamed(AppRoutes.otpScreen)
+        ? controller.processSignUp()
         : Get.snackbar('Error', 'Please fill all fields and agree to terms');
   }
 

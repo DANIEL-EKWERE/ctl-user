@@ -57,95 +57,109 @@ class LoginThreeInitialPage extends StatelessWidget {
                         spacing: 20,
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          _buildColumnnamemarke(),
-                          Container(
-                            width: double.maxFinite,
-                            margin: EdgeInsets.symmetric(horizontal: 20.h),
-                            child: Column(
-                              children: [
-                                CustomImageView(
-                                  imagePath:
-                                      ImageConstant.imgImportImage172x302,
-                                  height: 172.h,
-                                  width: double.maxFinite,
-                                  radius: BorderRadius.circular(14.h),
-                                ),
-                                SizedBox(height: 16.h),
-                                SizedBox(
-                                  width: double.maxFinite,
-                                  child: _buildNameOne(
-                                    namemarketOne: "lbl_kfc".tr,
+                          GestureDetector(
+                            onTap: () {
+                              Get.toNamed(
+                                AppRoutes.detailRestaurantsVoneScreen,
+                              );
+                            },
+                            child: _buildColumnnamemarke(),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              Get.toNamed(
+                                AppRoutes.detailRestaurantsReviewVoneScreen,
+                              );
+                            },
+                            child: Container(
+                              width: double.maxFinite,
+                              margin: EdgeInsets.symmetric(horizontal: 20.h),
+                              child: Column(
+                                children: [
+                                  CustomImageView(
+                                    imagePath:
+                                        ImageConstant.imgImportImage172x302,
+                                    height: 172.h,
+                                    width: double.maxFinite,
+                                    radius: BorderRadius.circular(14.h),
                                   ),
-                                ),
-                                SizedBox(height: 4.h),
-                                SizedBox(
-                                  width: double.maxFinite,
-                                  child: Row(
-                                    children: [
-                                      Text(
-                                        "lbl_open".tr,
-                                        style:
-                                            CustomTextStyles
-                                                .labelLargeTeal700_2,
-                                      ),
-                                      Container(
-                                        height: 2.h,
-                                        width: 2.h,
-                                        margin: EdgeInsets.only(left: 8.h),
-                                        decoration: BoxDecoration(
-                                          color: appTheme.gray400,
-                                          borderRadius: BorderRadius.circular(
-                                            1.h,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(left: 8.h),
-                                        child: Text(
-                                          "lbl_fastfood".tr,
-                                          style: theme.textTheme.labelLarge,
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 2.h,
-                                        width: 2.h,
-                                        margin: EdgeInsets.only(left: 8.h),
-                                        decoration: BoxDecoration(
-                                          color: appTheme.gray400,
-                                          borderRadius: BorderRadius.circular(
-                                            1.h,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(left: 8.h),
-                                        child: Text(
-                                          "lbl_chicken".tr,
-                                          style: theme.textTheme.labelLarge,
-                                        ),
-                                      ),
-                                      Container(
-                                        height: 2.h,
-                                        width: 2.h,
-                                        margin: EdgeInsets.only(left: 8.h),
-                                        decoration: BoxDecoration(
-                                          color: appTheme.gray400,
-                                          borderRadius: BorderRadius.circular(
-                                            1.h,
-                                          ),
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: EdgeInsets.only(left: 8.h),
-                                        child: Text(
-                                          "lbl_rice".tr,
-                                          style: theme.textTheme.labelLarge,
-                                        ),
-                                      ),
-                                    ],
+                                  SizedBox(height: 16.h),
+                                  SizedBox(
+                                    width: double.maxFinite,
+                                    child: _buildNameOne(
+                                      namemarketOne: "lbl_kfc".tr,
+                                    ),
                                   ),
-                                ),
-                              ],
+                                  SizedBox(height: 4.h),
+                                  SizedBox(
+                                    width: double.maxFinite,
+                                    child: Row(
+                                      children: [
+                                        Text(
+                                          "lbl_open".tr,
+                                          style:
+                                              CustomTextStyles
+                                                  .labelLargeTeal700_2,
+                                        ),
+                                        Container(
+                                          height: 2.h,
+                                          width: 2.h,
+                                          margin: EdgeInsets.only(left: 8.h),
+                                          decoration: BoxDecoration(
+                                            color: appTheme.gray400,
+                                            borderRadius: BorderRadius.circular(
+                                              1.h,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 8.h),
+                                          child: Text(
+                                            "lbl_fastfood".tr,
+                                            style: theme.textTheme.labelLarge,
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 2.h,
+                                          width: 2.h,
+                                          margin: EdgeInsets.only(left: 8.h),
+                                          decoration: BoxDecoration(
+                                            color: appTheme.gray400,
+                                            borderRadius: BorderRadius.circular(
+                                              1.h,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 8.h),
+                                          child: Text(
+                                            "lbl_chicken".tr,
+                                            style: theme.textTheme.labelLarge,
+                                          ),
+                                        ),
+                                        Container(
+                                          height: 2.h,
+                                          width: 2.h,
+                                          margin: EdgeInsets.only(left: 8.h),
+                                          decoration: BoxDecoration(
+                                            color: appTheme.gray400,
+                                            borderRadius: BorderRadius.circular(
+                                              1.h,
+                                            ),
+                                          ),
+                                        ),
+                                        Padding(
+                                          padding: EdgeInsets.only(left: 8.h),
+                                          child: Text(
+                                            "lbl_rice".tr,
+                                            style: theme.textTheme.labelLarge,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
                         ],

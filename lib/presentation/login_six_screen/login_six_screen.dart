@@ -232,6 +232,7 @@ class LoginSixScreen extends GetWidget<LoginSixController> {
             ],
           ),
           CustomElevatedButton(
+            onPressed: () => Get.toNamed(AppRoutes.addNewScreen),
             height: 46.h,
             width: 194.h,
             text: "lbl_add_to_order".tr,
