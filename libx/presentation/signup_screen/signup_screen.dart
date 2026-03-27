@@ -1,0 +1,595 @@
+// TODO Implement this library.
+import 'models/country_model.dart';
+import 'package:dropdown_search/dropdown_search.dart';
+import 'package:flutter/material.dart';
+import 'package:country_pickers/country.dart';
+import '../../core/app_export.dart';
+import '../../core/utils/validation_functions.dart';
+import '../../domain/facebookauth/facebook_auth_helper.dart';
+import '../../domain/googleauth/google_auth_helper.dart';
+import '../../theme/custom_button_style.dart';
+import '../../widgets/custom_checkbox_button.dart';
+import '../../widgets/custom_drop_down.dart';
+import '../../widgets/custom_icon_button.dart';
+import '../../widgets/custom_outlined_button.dart';
+import '../../widgets/custom_phone_number.dart';
+import '../../widgets/custom_text_form_field.dart';
+import 'controller/signup_controller.dart';
+import 'dart:developer' as myLog;
+
+// ignore_for_file: must_be_immutable
+SignupController controller = Get.put(SignupController());
+
+class SignupScreen extends StatefulWidget {
+  SignupScreen({Key? key}) : super(key: key);
+
+  @override
+  State<SignupScreen> createState() => _SignupScreenState();
+}
+
+class _SignupScreenState extends State<SignupScreen> {
+  GlobalKey<FormState> _formKey = GlobalKey<FormState>();
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    controller.fetchCountries();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: theme.colorScheme.onPrimary,
+      body: SafeArea(
+        child: Form(
+          key: _formKey,
+          child: SizedBox(
+            width: double.maxFinite,
+            child: SingleChildScrollView(
+              child: Container(
+                width: double.maxFinite,
+                padding: EdgeInsets.only(left: 16.h, top: 20.h, right: 16.h),
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "msg_create_an_account".tr,
+                        style: CustomTextStyles.titleLargeMontPrimarySemiBold,
+                      ),
+                    ),
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "msg_welcome_please".tr,
+                        style: CustomTextStyles.bodyMediumMontGray900,
+                      ),
+                    ),
+                    SizedBox(height: 22.h),
+                    _buildName(),
+                    SizedBox(height: 20.h),
+                    _buildLastName(),
+                    SizedBox(height: 20.h),
+                    Container(
+                      width: double.maxFinite,
+                      margin: EdgeInsets.only(right: 2.h),
+                      child: _buildPhoneNumber(),
+                    ),
+                    SizedBox(height: 20.h),
+                    _buildEmail(),
+                    SizedBox(height: 20.h),
+                    // Padding(
+                    //   padding: EdgeInsets.only(right: 2.h),
+                    //   child: CustomDropDown(
+                    //     hintText: "lbl_country".tr,
+                    //     hintStyle:
+                    //         CustomTextStyles.titleSmallMontOnPrimaryContainer_2,
+                    //     items:
+                    //         controller
+                    //             .signupModelObj
+                    //             .value
+                    //             .dropdownItemList
+                    //             .value,
+                    //     contentPadding: EdgeInsets.all(16.h),
+                    //   ),
+                    // ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(
+                        vertical: 10,
+                        //horizontal: 5.0,
+                      ),
+                      child: DropdownSearch<CountryData>(
+                        onChanged: (value) async {
+                          setState(() {
+                            controller.selectedCountry1 = value!.name;
+                            controller.selectedCountryId = value.id;
+                          });
+                          // print('selected item is: ${controller.selectedCountry1}');
+                          // print(
+                          //     'selected item Id is: ${controller.selectedCountryId}');
+
+                          assert(
+                            controller.selectedCountry1 != null,
+                            'Selected country should not be null',
+                          );
+
+                          //await controller.fetchStates();
+                          myLog.log(
+                            'Selected country: ${controller.selectedCountry1}',
+                          );
+                        },
+                        selectedItem: controller.selectedCountryx,
+                        suffixProps: const DropdownSuffixProps(),
+                        compareFn: (item1, item2) {
+                          return item1 == item2;
+                        },
+
+                        decoratorProps: const DropDownDecoratorProps(
+                          baseStyle: TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Color(0xffF5F5F5),
+                            alignLabelWithHint: true,
+                            suffixIconColor: Color(0xff004BFD),
+                            focusedBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                style: BorderStyle.solid,
+                                color: Color(0xff004BFD),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(8),
+                              ),
+                            ),
+                            enabledBorder: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                style: BorderStyle.solid,
+                                color: Color(0xffD9D9D9),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                style: BorderStyle.solid,
+                                color: Color(0xffD9D9D9),
+                                width: 1,
+                              ),
+                              borderRadius: BorderRadius.all(
+                                Radius.circular(12),
+                              ),
+                            ),
+                          ),
+                        ),
+                        dropdownBuilder: (context, selectedItem) {
+                          if (selectedItem != null) {
+                            return Text(selectedItem.name!);
+                          } else {
+                            return Text(
+                              'Enter Your Country',
+                              style: TextStyle(
+                                color: Colors.grey[300],
+                                fontSize: 16,
+                              ),
+                            );
+                          }
+                        },
+                        items:
+                            (f, cs) =>
+                                controller.isCountryLoading.value
+                                    ? []
+                                    : controller.countryDataList,
+                        //
+                        itemAsString: (item) {
+                          return item.name ?? '';
+                        },
+                        popupProps: PopupProps.menu(
+                          showSelectedItems: true,
+                          searchDelay: const Duration(seconds: 0),
+                          emptyBuilder: (context, searchEntry) {
+                            return controller.isCountryLoading.value
+                                ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Color(0xff004BFD),
+                                  ),
+                                )
+                                : const Center(
+                                  child: Text(
+                                    'No countries found',
+                                    style: TextStyle(
+                                      color: Colors.grey,
+                                      fontFamily: 'Poppins',
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                );
+                          },
+                          title: const Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Text(
+                              'Search Country',
+                              style: TextStyle(
+                                fontFamily: 'Poppins',
+                                fontSize: 12,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ),
+                          onDismissed: () {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text("move to the next item"),
+                              ),
+                            );
+                            myLog.log('Next items found.');
+                          },
+                          onItemsLoaded: (value) {
+                            myLog.log(
+                              'Items loaded: ${value.length} items found.',
+                            );
+                          },
+                          scrollbarProps: const ScrollbarProps(),
+                          showSearchBox: true,
+                          searchFieldProps: const TextFieldProps(),
+                          // disabledItemFn: (item) => item == 'Item 3',
+                          fit: FlexFit.loose,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 20.h),
+                    _buildPassword(),
+                    SizedBox(height: 20.h),
+                    _buildConfirmpassword(),
+                    SizedBox(height: 20.h),
+                    _buildRowagreeto(),
+                    SizedBox(height: 36.h),
+                    _buildSignup(),
+                    SizedBox(height: 36.h),
+                    Container(
+                      width: double.maxFinite,
+                      margin: EdgeInsets.symmetric(horizontal: 62.h),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          CustomIconButton(
+                            height: 62.h,
+                            width: 62.h,
+                            padding: EdgeInsets.all(16.h),
+                            decoration: IconButtonStyleHelper.none,
+                            child: CustomImageView(
+                              imagePath: ImageConstant.imgGroup13,
+                            ),
+                          ),
+                          CustomIconButton(
+                            height: 62.h,
+                            width: 62.h,
+                            padding: EdgeInsets.all(16.h),
+                            decoration: IconButtonStyleHelper.none,
+                            onTap: () {
+                              onTapBtnGoogleone();
+                            },
+                            child: CustomImageView(
+                              imagePath: ImageConstant.imgGoogle,
+                            ),
+                          ),
+                          CustomIconButton(
+                            height: 62.h,
+                            width: 62.h,
+                            padding: EdgeInsets.all(16.h),
+                            decoration: IconButtonStyleHelper.none,
+                            onTap: () {
+                           //   onTapBtnFacebookone();
+                            },
+                            child: CustomImageView(
+                              imagePath: ImageConstant.imgFacebook,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: 52.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "msg_already_have_an".tr,
+                          style:
+                              CustomTextStyles.labelLargeMontOnPrimaryContainer,
+                        ),
+                        GestureDetector(
+                          onTap: () {
+                            Get.toNamed(AppRoutes.loginScreen);
+                          },
+                          child: Text(
+                            "lbl_log_in".tr,
+                            style: CustomTextStyles.labelLargeMontPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildName() {
+    return Padding(
+      padding: EdgeInsets.only(right: 2.h),
+      child: CustomTextFormField(
+        textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+        controller: controller.nameController,
+        hintText: "lbl_frist_name".tr,
+        contentPadding: EdgeInsets.all(16.h),
+        validator: (value) {
+          if (!isText(value)) {
+            return "err_msg_please_enter_valid_text".tr;
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildLastName() {
+    return Padding(
+      padding: EdgeInsets.only(right: 2.h),
+      child: CustomTextFormField(
+        textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+        controller: controller.lastNameController,
+        hintText: "lbl_last_name".tr,
+        contentPadding: EdgeInsets.all(16.h),
+        validator: (value) {
+          if (!isText(value)) {
+            return "err_msg_please_enter_valid_text".tr;
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildPhoneNumber() {
+    return Container(
+      width: double.maxFinite,
+      margin: EdgeInsets.only(right: 2.h),
+      child: Obx(
+        () => CustomPhoneNumber(
+          country: controller.selectedCountry.value,
+          controller: controller.phoneNumberController,
+          onTap: (Country value) {
+            controller.selectedCountry.value = value;
+          },
+        ),
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildEmail() {
+    return Padding(
+      padding: EdgeInsets.only(right: 2.h),
+      child: CustomTextFormField(
+        textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+        controller: controller.emailController,
+        hintText: "lbl_email".tr,
+        textInputType: TextInputType.emailAddress,
+        contentPadding: EdgeInsets.all(16.h),
+        validator: (value) {
+          if (value == null || (!isValidEmail(value, isRequired: true))) {
+            return "err_msg_please_enter_valid_email".tr;
+          }
+          return null;
+        },
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildPassword() {
+    return Padding(
+      padding: EdgeInsets.only(right: 2.h),
+      child: Obx(() {
+        return CustomTextFormField(
+          suffix: Container(
+            margin: EdgeInsets.only(right: 22.h, left: 22.h),
+            child: CustomImageView(
+              onTap: () {
+                controller.obscurePassword.value =
+                    !controller.obscurePassword.value;
+                controller.update();
+              },
+              imagePath:
+                  controller.obscurePassword.value
+                      ? ImageConstant.imgEye
+                      : ImageConstant.imgEyecrossed1,
+              height: 16.h,
+              width: 16.h,
+              fit: BoxFit.contain,
+            ),
+          ),
+          textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+          controller: controller.passwordController,
+          hintText: "lbl_password".tr,
+          textInputType: TextInputType.visiblePassword,
+          obscureText: controller.obscurePassword.value,
+          contentPadding: EdgeInsets.all(16.h),
+          validator: (value) {
+            if (value == null || (!isValidPassword(value, isRequired: true))) {
+              return "err_msg_please_enter_valid_password".tr;
+            }
+            return null;
+          },
+        );
+      }),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildConfirmpassword() {
+    return Padding(
+      padding: EdgeInsets.only(right: 2.h),
+      child: Obx(() {
+        return CustomTextFormField(
+          suffix: Container(
+            margin: EdgeInsets.only(right: 22.h, left: 22.h),
+            child: CustomImageView(
+              onTap: () {
+                controller.obscurePassword1.value =
+                    !controller.obscurePassword1.value;
+                controller.update();
+              },
+              imagePath:
+                  controller.obscurePassword1.value
+                      ? ImageConstant.imgEye
+                      : ImageConstant.imgEyecrossed1,
+              height: 16.h,
+              width: 16.h,
+              fit: BoxFit.contain,
+            ),
+          ),
+          textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+          controller: controller.confirmpasswordController,
+          hintText: "msg_confirm_password".tr,
+          textInputAction: TextInputAction.done,
+          textInputType: TextInputType.visiblePassword,
+          obscureText: controller.obscurePassword1.value,
+          contentPadding: EdgeInsets.all(16.h),
+          validator: (value) {
+            if (value == null || (!isValidPassword(value, isRequired: true))) {
+              return "err_msg_please_enter_valid_password".tr;
+            }
+            return null;
+          },
+        );
+      }),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildRowagreeto() {
+    return SizedBox(
+      width: double.maxFinite,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8),
+        child: Row(
+          children: [
+            Obx(
+              () => CustomCheckboxButton(
+                text: "lbl_agree_to".tr,
+                value: controller.agreetoone.value,
+                onChange: (value) {
+                  controller.agreetoone.value = value;
+                },
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 4.h),
+              child: Text(
+                "msg_terms_of_services".tr,
+                style: CustomTextStyles.labelMediumMontBlueA400,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 4.h),
+              child: Text(
+                "lbl".tr,
+                style: CustomTextStyles.labelMediumMontBlack900Medium,
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.only(left: 4.h),
+              child: Text(
+                "lbl_privacy_policy".tr,
+                style: CustomTextStyles.labelMediumMontBlueA400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Section Widget
+  Widget _buildSignup() {
+    return Obx(
+      () => CustomOutlinedButton(
+        text: "lbl_sign_up".tr,
+        margin: EdgeInsets.only(right: 2.h),
+        buttonStyle:
+            (controller.agreetoone.value ||
+                    controller.nameController.text.isNotEmpty ||
+                    controller.lastNameController.text.isNotEmpty ||
+                    controller.phoneNumberController.text.isNotEmpty ||
+                    controller.emailController.text.isNotEmpty ||
+                    controller.passwordController.text.isNotEmpty ||
+                    controller.confirmpasswordController.text.isNotEmpty)
+                ? CustomButtonStyles.fillPrimary
+                : CustomButtonStyles.outlineOnPrimaryContainer,
+        buttonTextStyle:
+            (controller.agreetoone.value ||
+                    controller.nameController.text.isNotEmpty ||
+                    controller.lastNameController.text.isNotEmpty ||
+                    controller.phoneNumberController.text.isNotEmpty ||
+                    controller.emailController.text.isNotEmpty ||
+                    controller.passwordController.text.isNotEmpty ||
+                    controller.confirmpasswordController.text.isNotEmpty)
+                ? CustomTextStyles.titleSmallMontOnPrimaryExtraBold
+                : CustomTextStyles.titleSmallMontOnPrimaryContainer,
+        onPressed: () {
+          onTapSignup();
+        },
+      ),
+    );
+  }
+
+  /// Navigates to the signupOneScreen when the action is triggered.
+  onTapSignup() {
+    //textStyle: CustomTextStyles.titleSmallMontOnPrimaryContainer_1,
+    //Get.toNamed(AppRoutes.signupOneScreen);
+    (controller.agreetoone.value ||
+            controller.nameController.text.isNotEmpty ||
+            controller.lastNameController.text.isNotEmpty ||
+            controller.phoneNumberController.text.isNotEmpty ||
+            controller.emailController.text.isNotEmpty ||
+            controller.passwordController.text.isNotEmpty ||
+            controller.confirmpasswordController.text.isNotEmpty)
+        //? //Get.toNamed(AppRoutes.otpScreen)
+        ? controller.processSignUp()
+        : Get.snackbar('Error', 'Please fill all fields and agree to terms');
+  }
+
+  onTapBtnGoogleone() async {
+    await GoogleAuthHelper()
+        .googleSignInProcess()
+        .then((googleUser) {
+          if (googleUser != null) {
+          } else {
+            Get.snackbar('Error', 'user data is empty');
+          }
+        })
+        .catchError((onError) {
+          Get.snackbar('Error', onError.toString());
+        });
+  }
+
+  // onTapBtnFacebookone() async {
+  //   await FacebookAuthHelper()
+  //       .facebookSignInProcess()
+  //       .then((facebookUser) {})
+  //       .catchError((onError) {
+  //         Get.snackbar('Error', onError.toString());
+  //       });
+  // }
+}
