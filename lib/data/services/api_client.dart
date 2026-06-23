@@ -387,6 +387,36 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> patch(
+    String path, {
+    String? token,
+    Map<String, dynamic>? body,
+  }) async {
+    final url = Uri.parse('$_base/$path');
+    myLog.log(
+      'PATCH $url with body: ${body != null ? jsonEncode(body) : 'null'} and token: $token',
+    );
+    try {
+      final res = await http
+          .patch(
+            url,
+            headers: _headers(token: token),
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(_timeout);
+      myLog.log('Response from $url: ${res.statusCode} - ${res.body}');
+      if (res.statusCode == 401) {
+        Get.to(() => LoginScreen());
+        return _handleResponse(res);
+      }
+      return _handleResponse(res);
+    } on TimeoutException {
+      return {'success': false, 'message': 'Request timed out'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   // ─── Auth ────────────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> login(Map<String, dynamic> body) =>
       post('auth/login', body: body);
@@ -493,7 +523,7 @@ class ApiClient {
   Future<Map<String, dynamic>> setDefaultAddress(
     String addressId,
     String token,
-  ) => post('customer/addresses/$addressId/set-default', token: token);
+  ) => patch('customer/addresses/$addressId/set-default', token: token);
 
   Future<Map<String, dynamic>> getNotifications(String token) =>
       get('notifications', token: token);

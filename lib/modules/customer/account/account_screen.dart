@@ -766,7 +766,13 @@ class _AddressesScreenState extends State<AddressesScreen> {
   bool loading = false;
   final auth = AuthController.to;
   final ctrl = CustomerHomeController.to;
-  //  final u = auth.customerUser;
+
+  @override
+  void initState() {
+    super.initState();
+    ctrl.loadAddresses();
+  }
+
   Future<void> _setDefaultAddress(String addressId) async {
     // if (_searchCtrl.text.trim().isEmpty) {
     //   Get.snackbar(
@@ -785,9 +791,10 @@ class _AddressesScreenState extends State<AddressesScreen> {
     setState(() => loading = false);
     if (res['success'] == true) {
       await ctrl.loadAddresses();
-      Get.back();
+      setState(() => _selectedAddressId = null); // let isDefault drive the UI
       showToast('Address set as default successfully');
     } else {
+      setState(() => _selectedAddressId = null);
       showToast(res['message'] ?? 'Failed to save', isError: true);
     }
   }
@@ -801,11 +808,21 @@ class _AddressesScreenState extends State<AddressesScreen> {
         title: 'Saved Addresses',
         actions: [
           loading
-              ? IconButton(
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16),
+                  child: SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  ),
+                )
+              : IconButton(
                   icon: const Icon(Icons.add, color: Colors.white),
                   onPressed: () => Get.toNamed(AppRoutes.addAddress),
-                )
-              : CircularProgressIndicator(color: Colors.white),
+                ),
         ],
       ),
       body: Obx(() {
@@ -822,7 +839,9 @@ class _AddressesScreenState extends State<AddressesScreen> {
           itemCount: list.length,
           itemBuilder: (_, i) {
             final a = list[i];
-            final isSelected = _selectedAddressId == a.id.toString();
+            final isSelected = _selectedAddressId != null
+                ? _selectedAddressId == a.id.toString()
+                : a.isDefault;
             return GestureDetector(
               onTap: () {
                 setState(() {

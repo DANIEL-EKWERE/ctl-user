@@ -401,7 +401,7 @@ class _CheckoutState extends State<CheckoutScreen> {
           _card(Column(children: [
             _payOpt('wallet', Icons.account_balance_wallet_outlined, 'Wallet Balance', 'Pay with your NKsereke wallet'),
             const Divider(height: 1),
-            _payOpt('card', Icons.credit_card_outlined, 'Pay with Card', 'Paystack online payment'),
+            // _payOpt('card', Icons.credit_card_outlined, 'Pay with Card', 'Paystack online payment'),
           ])),
           const SizedBox(height: 14),
 

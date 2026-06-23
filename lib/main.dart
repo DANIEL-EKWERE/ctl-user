@@ -169,7 +169,6 @@
 //   );
 // }
 
-
 import 'package:ctluser/modules/customer/home/customer_home_controller.dart';
 import 'package:ctluser/modules/rider/dashboard/rider_controller.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -268,10 +267,7 @@ final _pages = [
     name: AppRoutes.vendorReviews,
     page: () => const VendorReviewsScreen(),
   ),
-  GetPage(
-    name: AppRoutes.writeReview,
-    page: () => const WriteReviewScreen(),
-  ),
+  GetPage(name: AppRoutes.writeReview, page: () => const WriteReviewScreen()),
 
   // Rider
   GetPage(
