@@ -101,6 +101,30 @@ class _WalletScreenState extends State<WalletScreen> {
                   ),
                 ],
               ),
+              const SizedBox(height: 10),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: () => _showCustomerBankAccountsSheet(context),
+                  icon: const Icon(Icons.account_balance_outlined,
+                      color: Colors.white70, size: 16),
+                  label: const Text(
+                    'Link Bank Account',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    side: const BorderSide(color: Colors.white24),
+                    minimumSize: const Size(double.infinity, 38),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),
@@ -644,3 +668,296 @@ InputDecoration _wInputDec(String label) => InputDecoration(
       contentPadding:
           const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
     );
+
+// ─── Customer Bank Accounts Sheet ────────────────────────────────────────────
+
+void _showCustomerBankAccountsSheet(BuildContext context) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => const _CustomerBankAccountsSheet(),
+  );
+}
+
+class _CustomerBankAccountsSheet extends StatefulWidget {
+  const _CustomerBankAccountsSheet();
+  @override
+  State<_CustomerBankAccountsSheet> createState() =>
+      _CustomerBankAccountsSheetState();
+}
+
+class _CustomerBankAccountsSheetState
+    extends State<_CustomerBankAccountsSheet> {
+  final ctrl = CustomerHomeController.to;
+  bool _adding = false;
+  bool _saving = false;
+  bool _loadingBanks = false;
+
+  BankOption? _selectedBank;
+  final _acctNumCtrl = TextEditingController();
+  final _acctNameCtrl = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchBanks();
+  }
+
+  @override
+  void dispose() {
+    _acctNumCtrl.dispose();
+    _acctNameCtrl.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchBanks() async {
+    if (ctrl.availableBanks.isNotEmpty) return;
+    setState(() => _loadingBanks = true);
+    await ctrl.loadBanks();
+    if (mounted) setState(() => _loadingBanks = false);
+  }
+
+  Future<void> _pickBank() async {
+    if (_loadingBanks) return;
+    if (ctrl.availableBanks.isEmpty) {
+      setState(() => _loadingBanks = true);
+      await ctrl.loadBanks();
+      if (!mounted) return;
+      setState(() => _loadingBanks = false);
+    }
+    if (!mounted) return;
+    final picked = await showDialog<BankOption>(
+      context: context,
+      builder: (_) => _BankPickerDialog(banks: ctrl.availableBanks),
+    );
+    if (picked != null) setState(() => _selectedBank = picked);
+  }
+
+  Future<void> _save() async {
+    if (_selectedBank == null ||
+        _acctNumCtrl.text.isEmpty ||
+        _acctNameCtrl.text.isEmpty) {
+      showToast('Fill all fields', isError: true);
+      return;
+    }
+    setState(() => _saving = true);
+    final ok = await ctrl.addBankAccount({
+      'bank_code': _selectedBank!.code,
+      'bank_name': _selectedBank!.name,
+      'account_number': _acctNumCtrl.text.trim(),
+      'account_name': _acctNameCtrl.text.trim(),
+    });
+    setState(() => _saving = false);
+    if (ok && mounted) setState(() => _adding = false);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return DraggableScrollableSheet(
+      initialChildSize: 0.6,
+      minChildSize: 0.4,
+      maxChildSize: 0.92,
+      builder: (_, sc) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Bank Accounts',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.navy,
+                      ),
+                    ),
+                  ),
+                  TextButton.icon(
+                    onPressed: () => setState(() => _adding = !_adding),
+                    icon: Icon(_adding ? Icons.close : Icons.add, size: 18),
+                    label: Text(_adding ? 'Cancel' : 'Add New'),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            if (_adding)
+              Padding(
+                padding: EdgeInsets.fromLTRB(
+                  20,
+                  14,
+                  20,
+                  MediaQuery.of(context).viewInsets.bottom + 14,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    GestureDetector(
+                      onTap: _loadingBanks ? null : _pickBank,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.grey.shade400),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                _selectedBank?.name ?? 'Select Bank',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: _selectedBank == null
+                                      ? Colors.grey.shade600
+                                      : Colors.black87,
+                                ),
+                              ),
+                            ),
+                            if (_loadingBanks)
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2),
+                              )
+                            else
+                              const Icon(Icons.keyboard_arrow_down_rounded,
+                                  color: Colors.grey),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _acctNumCtrl,
+                      keyboardType: TextInputType.number,
+                      decoration: _wInputDec('Account Number'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _acctNameCtrl,
+                      decoration: _wInputDec('Account Name'),
+                    ),
+                    const SizedBox(height: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: AppButton(
+                        label: _saving ? 'Saving…' : 'Save Account',
+                        onTap: _saving ? null : _save,
+                      ),
+                    ),
+                  ],
+                ),
+              )
+            else
+              Expanded(
+                child: Obx(
+                  () => ctrl.bankAccounts.isEmpty
+                      ? const EmptyState(
+                          icon: Icons.account_balance_outlined,
+                          title: 'No bank accounts added yet',
+                        )
+                      : ListView.separated(
+                          controller: sc,
+                          itemCount: ctrl.bankAccounts.length,
+                          separatorBuilder: (_, _) =>
+                              const Divider(height: 1),
+                          itemBuilder: (_, i) {
+                            final b = ctrl.bankAccounts[i];
+                            return ListTile(
+                              leading: Container(
+                                width: 42,
+                                height: 42,
+                                decoration: BoxDecoration(
+                                  color: AppColors.bg,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Icon(
+                                    Icons.account_balance_outlined,
+                                    size: 20,
+                                    color: AppColors.navy),
+                              ),
+                              title: Text(b.bankName,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 14)),
+                              subtitle: Text(b.accountNumber,
+                                  style: const TextStyle(fontSize: 12)),
+                              trailing: Text(b.accountName,
+                                  style: const TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.textSecondary)),
+                            );
+                          },
+                        ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _BankPickerDialog extends StatefulWidget {
+  final List<BankOption> banks;
+  const _BankPickerDialog({required this.banks});
+  @override
+  State<_BankPickerDialog> createState() => _BankPickerDialogState();
+}
+
+class _BankPickerDialogState extends State<_BankPickerDialog> {
+  String _query = '';
+
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.banks
+        .where((b) => b.name.toLowerCase().contains(_query.toLowerCase()))
+        .toList();
+    return Dialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: SizedBox(
+        height: MediaQuery.of(context).size.height * 0.6,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: TextField(
+                autofocus: true,
+                onChanged: (v) => setState(() => _query = v),
+                decoration: _wInputDec('Search bank…'),
+              ),
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: filtered.length,
+                itemBuilder: (_, i) => ListTile(
+                  title: Text(filtered[i].name,
+                      style: const TextStyle(fontSize: 14)),
+                  onTap: () => Navigator.pop(context, filtered[i]),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

@@ -790,11 +790,12 @@ class BankAccount {
 
 // ─── Notification ────────────────────────────────────────────────────────────
 class AppNotification {
-  final int id;
+  final String id; // Laravel notification IDs are UUIDs
   final String title;
   final String? body;
   final bool isRead;
   final String? createdAt;
+  final String? route; // optional deep-link route from notification payload
 
   AppNotification({
     required this.id,
@@ -802,13 +803,30 @@ class AppNotification {
     this.body,
     required this.isRead,
     this.createdAt,
+    this.route,
   });
 
-  factory AppNotification.fromJson(Map<String, dynamic> j) => AppNotification(
-    id: int.tryParse(j['id'].toString()) ?? 0,
-    title: j['title'] ?? '',
-    body: j['body'] ?? j['message'],
-    isRead: j['is_read'] == true || j['is_read'] == 1,
-    createdAt: j['created_at'],
-  );
+  AppNotification copyWith({bool? isRead}) => AppNotification(
+        id: id,
+        title: title,
+        body: body,
+        isRead: isRead ?? this.isRead,
+        createdAt: createdAt,
+        route: route,
+      );
+
+  factory AppNotification.fromJson(Map<String, dynamic> j) {
+    // Laravel notifications nest payload inside a 'data' map
+    final nested = j['data'] is Map<String, dynamic>
+        ? j['data'] as Map<String, dynamic>
+        : <String, dynamic>{};
+    return AppNotification(
+      id: j['id']?.toString() ?? '',
+      title: nested['title'] ?? j['title'] ?? '',
+      body: nested['body'] ?? nested['message'] ?? j['body'] ?? j['message'],
+      isRead: j['read_at'] != null || j['is_read'] == true || j['is_read'] == 1,
+      createdAt: j['created_at'],
+      route: nested['route'] as String?,
+    );
+  }
 }

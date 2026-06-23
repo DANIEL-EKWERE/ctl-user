@@ -64,62 +64,71 @@ class NotificationsScreen extends StatelessWidget {
             itemCount: list.length,
             itemBuilder: (_, i) {
               final n = list[i];
-              return Container(
-                decoration: BoxDecoration(
-                  color: n.isRead ? Colors.white : const Color(0xFFFFF5E6),
-                  border: const Border(
-                    bottom: BorderSide(color: AppColors.border),
+              return GestureDetector(
+                onTap: () {
+                  if (!n.isRead) ctrl.markRead(n.id);
+                  if (n.route != null && n.route!.isNotEmpty) {
+                    Get.toNamed(n.route!);
+                  }
+                },
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: n.isRead ? Colors.white : const Color(0xFFFFF5E6),
+                    border: const Border(
+                      bottom: BorderSide(color: AppColors.border),
+                    ),
                   ),
-                ),
-                padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 10,
-                      height: 10,
-                      margin: const EdgeInsets.only(top: 4, right: 10),
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: n.isRead ? Colors.transparent : AppColors.orange,
+                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 10,
+                        height: 10,
+                        margin: const EdgeInsets.only(top: 4, right: 10),
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color:
+                              n.isRead ? Colors.transparent : AppColors.orange,
+                        ),
                       ),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            n.title,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: AppColors.navy,
-                            ),
-                          ),
-                          if (n.body != null) ...[
-                            const SizedBox(height: 4),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              n.body!,
+                              n.title,
                               style: const TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.navy,
                               ),
                             ),
-                          ],
-                          if (n.createdAt != null) ...[
-                            const SizedBox(height: 4),
-                            Text(
-                              AppUtils.timeAgo(n.createdAt),
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textLight,
+                            if (n.body != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                n.body!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
-                            ),
+                            ],
+                            if (n.createdAt != null) ...[
+                              const SizedBox(height: 4),
+                              Text(
+                                AppUtils.timeAgo(n.createdAt),
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textLight,
+                                ),
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             },

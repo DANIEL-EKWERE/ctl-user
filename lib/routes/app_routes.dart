@@ -24,6 +24,7 @@ class AppRoutes {
   static const support       = '/support';
   static const vendorReviews = '/vendor-reviews';
   static const writeReview   = '/write-review';
+  static const reportOrder   = '/report-order';
   static const categories    = '/categories';
 
   // Rider

@@ -791,6 +791,30 @@ class CustomerHomeController extends GetxController {
     }
   }
 
+  Future<bool> reportOrder({
+    required int orderId,
+    required String abuseType,
+    required String description,
+    int? reportedUserId,
+  }) async {
+    myLog.log('[Report] controller.reportOrder — token=${token != null ? "present" : "NULL"}');
+    if (token == null) {
+      showToast('Session expired. Please log in again.', isError: true);
+      return false;
+    }
+    final body = {
+      'abuse_type': abuseType,
+      'description': description,
+      if (reportedUserId case final id?) 'reported_user_id': id,
+    };
+    myLog.log('[Report] POST orders/$orderId/report-abuse body=$body');
+    final res = await _api.reportOrder(orderId, body, token!);
+    myLog.log('[Report] response: $res');
+    if (res['success'] == true) return true;
+    showToast(res['message'] ?? 'Failed to submit report', isError: true);
+    return false;
+  }
+
   Future<bool> submitReview({
     required int vendorId,
     required int rating,
@@ -862,9 +886,15 @@ class CustomerHomeController extends GetxController {
     }
     if (results[2]['success'] == true) {
       final body = results[2]['data'] as Map<String, dynamic>;
-      final raw = body['data'] ?? body['bank_accounts'] ?? body['accounts'] ?? body['raw_list'] ?? [];
+      final raw =
+          body['data'] ??
+          body['bank_accounts'] ??
+          body['accounts'] ??
+          body['raw_list'] ??
+          [];
       bankAccounts.value = (raw as List)
-          .map((b) => BankAccount.fromJson(b as Map<String, dynamic>)).toList();
+          .map((b) => BankAccount.fromJson(b as Map<String, dynamic>))
+          .toList();
     }
   }
 
@@ -875,7 +905,8 @@ class CustomerHomeController extends GetxController {
       final body = res['data'] as Map<String, dynamic>;
       final raw = body['data'] ?? body['banks'] ?? body['raw_list'] ?? [];
       availableBanks.value = (raw as List)
-          .map((b) => BankOption.fromJson(b as Map<String, dynamic>)).toList();
+          .map((b) => BankOption.fromJson(b as Map<String, dynamic>))
+          .toList();
     }
   }
 
@@ -959,7 +990,8 @@ class CustomerHomeController extends GetxController {
       checkoutServiceChargePct =
           double.tryParse((cfg['service_charge_pct'] ?? 5).toString()) ?? 5;
       checkoutDefaultDeliveryFee =
-          double.tryParse((cfg['default_delivery_fee'] ?? 500).toString()) ?? 500;
+          double.tryParse((cfg['default_delivery_fee'] ?? 500).toString()) ??
+          500;
       checkoutDeliveryBands =
           (cfg['delivery_fee_bands'] as List?)
               ?.map((b) => Map<String, dynamic>.from(b))

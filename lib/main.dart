@@ -194,6 +194,7 @@ import 'modules/customer/notifications/notifications_controller.dart';
 import 'modules/customer/notifications/notifications_screen.dart';
 import 'modules/customer/reviews/vendor_reviews_screen.dart';
 import 'modules/customer/reviews/write_review_screen.dart';
+import 'modules/customer/orders/report_order_screen.dart';
 import 'modules/rider/dashboard/rider_screens.dart';
 import 'routes/app_routes.dart';
 
@@ -268,6 +269,7 @@ final _pages = [
     page: () => const VendorReviewsScreen(),
   ),
   GetPage(name: AppRoutes.writeReview, page: () => const WriteReviewScreen()),
+  GetPage(name: AppRoutes.reportOrder, page: () => const ReportOrderScreen()),
 
   // Rider
   GetPage(

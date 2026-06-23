@@ -531,6 +531,17 @@ class ApiClient {
   Future<Map<String, dynamic>> markAllNotificationsRead(String token) =>
       post('notifications/read-all', token: token);
 
+  Future<Map<String, dynamic>> markNotificationRead(
+    String notificationId,
+    String token,
+  ) => post('notifications/$notificationId/read', token: token);
+
+  Future<Map<String, dynamic>> reportOrder(
+    int orderId,
+    Map<String, dynamic> data,
+    String token,
+  ) => post('orders/$orderId/report-abuse', token: token, body: data);
+
   Future<Map<String, dynamic>> savePushToken(
     String fcmToken,
     String platform,

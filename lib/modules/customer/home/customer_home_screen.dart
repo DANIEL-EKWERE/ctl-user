@@ -2662,7 +2662,7 @@ class VendorCard extends StatelessWidget {
                 child: vendor.bannerUrl != null
                     ? CachedNetworkImage(
                         imageUrl: vendor.bannerUrl!,
-                        height: 80,
+                        height: 150,
                         width: double.infinity,
                         fit: BoxFit.cover,
                         errorWidget: (_, __, ___) => _bannerFallback(),
@@ -2783,10 +2783,10 @@ class VendorCard extends StatelessWidget {
   );
 
   Widget _bannerFallback() => Container(
-    height: 80,
+    height: 150,
     color: AppColors.navyLight,
     child: const Center(
-      child: Icon(Icons.store, size: 32, color: Colors.white30),
+      child: Icon(Icons.store, size: 40, color: Colors.white30),
     ),
   );
 }

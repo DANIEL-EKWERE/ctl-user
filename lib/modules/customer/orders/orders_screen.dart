@@ -1,7 +1,9 @@
+import 'dart:developer' as myLog;
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/utils/app_utils.dart';
+import '../../../core/utils/toast.dart';
 import '../../../data/models/models.dart';
 import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
@@ -313,8 +315,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   void initState() {
     super.initState();
     final id = Get.arguments;
-    if (id != null)
+    if (id != null) {
       ctrl.loadOrderDetail(id is int ? id : int.tryParse(id.toString()) ?? 0);
+    }
   }
 
   @override
@@ -574,7 +577,33 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 ],
               ),
             ],
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
+
+            // Actions
+            TextButton.icon(
+              onPressed: () => _showReportSheet(
+                context,
+                orderId: o.id,
+                orderRef: o.reference,
+                riderUserId: o.rider?.id,
+                vendorUserId: o.vendor?.id,
+              ),
+              icon: const Icon(
+                Icons.flag_outlined,
+                color: AppColors.red,
+                size: 16,
+              ),
+              label: const Text(
+                'Report an Issue',
+                style: TextStyle(
+                  color: AppColors.red,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
           ],
         ),
       );
@@ -689,4 +718,345 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
     }).toList(),
   );
+}
+
+// ─── Report Order Sheet ───────────────────────────────────────────────────────
+
+void _showReportSheet(
+  BuildContext context, {
+  required int orderId,
+  required String orderRef,
+  int? riderUserId,
+  int? vendorUserId,
+}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => _ReportOrderSheet(
+      orderId: orderId,
+      orderRef: orderRef,
+      riderUserId: riderUserId,
+      vendorUserId: vendorUserId,
+    ),
+  );
+}
+
+class _ReportOrderSheet extends StatefulWidget {
+  final int orderId;
+  final String orderRef;
+  final int? riderUserId;
+  final int? vendorUserId;
+
+  const _ReportOrderSheet({
+    required this.orderId,
+    required this.orderRef,
+    this.riderUserId,
+    this.vendorUserId,
+  });
+
+  @override
+  State<_ReportOrderSheet> createState() => _ReportOrderSheetState();
+}
+
+class _ReportOrderSheetState extends State<_ReportOrderSheet> {
+  final ctrl = CustomerHomeController.to;
+  final _descCtrl = TextEditingController();
+  String? _selectedType;
+  bool _loading = false;
+
+  static const _abuseTypes = {
+    'Food/Package was tampered': 'tampered',
+    'Order was not delivered': 'not_delivered',
+    'Received wrong items': 'wrong_item',
+    'Rude or unprofessional behavior': 'rude_behavior',
+    'Fraud or scam': 'fraud',
+    'Other': 'other',
+  };
+
+  @override
+  void dispose() {
+    _descCtrl.dispose();
+    super.dispose();
+  }
+
+  int? get _reportedUserId {
+    if (_selectedType == 'not_delivered') return widget.riderUserId;
+    if (_selectedType == 'wrong_item') return widget.vendorUserId;
+    return widget.riderUserId ?? widget.vendorUserId;
+  }
+
+  Future<void> _submit() async {
+    myLog.log('[Report] _submit called — type=$_selectedType, desc="${_descCtrl.text.trim()}", orderId=${widget.orderId}');
+    if (_selectedType == null) {
+      myLog.log('[Report] blocked: no type selected');
+      showToast('Please select an issue type', isError: true);
+      return;
+    }
+    final desc = _descCtrl.text.trim();
+    if (desc.length < 20) {
+      myLog.log('[Report] blocked: desc too short (${desc.length} chars)');
+      showToast('Description must be at least 20 characters', isError: true);
+      return;
+    }
+    myLog.log('[Report] calling API — orderId=${widget.orderId}, type=$_selectedType, reportedUserId=$_reportedUserId');
+    setState(() => _loading = true);
+    final ok = await ctrl.reportOrder(
+      orderId: widget.orderId,
+      abuseType: _selectedType!,
+      description: desc,
+      reportedUserId: _reportedUserId,
+    );
+    myLog.log('[Report] ctrl.reportOrder returned: $ok');
+    setState(() => _loading = false);
+    if (ok && mounted) {
+      Navigator.pop(context);
+      showToast('Report submitted. We will look into this.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final inset = MediaQuery.of(context).viewInsets.bottom;
+    return DraggableScrollableSheet(
+      initialChildSize: 0.75,
+      minChildSize: 0.5,
+      maxChildSize: 0.95,
+      builder: (_, sc) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 10),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+              child: Row(
+                children: [
+                  Container(
+                    width: 36,
+                    height: 36,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF2F2),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.flag_outlined,
+                      color: AppColors.red,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Report an Issue',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.navy,
+                          ),
+                        ),
+                        Text(
+                          'Order ${widget.orderRef}',
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                controller: sc,
+                padding: EdgeInsets.fromLTRB(20, 16, 20, inset + 16),
+                children: [
+                  const Text(
+                    'What type of issue?',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      children: _abuseTypes.entries
+                          .toList()
+                          .asMap()
+                          .entries
+                          .map((e) {
+                            final i = e.key;
+                            final label = e.value.key;
+                            final value = e.value.value;
+                            final isLast = i == _abuseTypes.length - 1;
+                            final selected = _selectedType == value;
+                            return GestureDetector(
+                              onTap: () =>
+                                  setState(() => _selectedType = value),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 13,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: selected
+                                      ? const Color(0xFFFFF5E6)
+                                      : Colors.white,
+                                  borderRadius: BorderRadius.only(
+                                    topLeft: i == 0
+                                        ? const Radius.circular(14)
+                                        : Radius.zero,
+                                    topRight: i == 0
+                                        ? const Radius.circular(14)
+                                        : Radius.zero,
+                                    bottomLeft: isLast
+                                        ? const Radius.circular(14)
+                                        : Radius.zero,
+                                    bottomRight: isLast
+                                        ? const Radius.circular(14)
+                                        : Radius.zero,
+                                  ),
+                                  border: isLast
+                                      ? null
+                                      : const Border(
+                                          bottom: BorderSide(
+                                            color: AppColors.border,
+                                          ),
+                                        ),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Container(
+                                      width: 18,
+                                      height: 18,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        border: Border.all(
+                                          color: selected
+                                              ? AppColors.orange
+                                              : AppColors.border,
+                                          width: 2,
+                                        ),
+                                        color: selected
+                                            ? AppColors.orange
+                                            : Colors.transparent,
+                                      ),
+                                      child: selected
+                                          ? const Icon(
+                                              Icons.check,
+                                              size: 10,
+                                              color: Colors.white,
+                                            )
+                                          : null,
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        label,
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: selected
+                                              ? FontWeight.w700
+                                              : FontWeight.normal,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          })
+                          .toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const Text(
+                    'Describe what happened',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Minimum 20 characters',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  TextField(
+                    controller: _descCtrl,
+                    maxLines: 4,
+                    maxLength: 500,
+                    decoration: InputDecoration(
+                      hintText: 'Describe the issue in detail…',
+                      hintStyle: const TextStyle(
+                        color: AppColors.textLight,
+                        fontSize: 13,
+                      ),
+                      filled: true,
+                      fillColor: AppColors.inputBg,
+                      contentPadding: const EdgeInsets.all(14),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.border,
+                          width: 1.5,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.border,
+                          width: 1.5,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: const BorderSide(
+                          color: AppColors.orange,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  AppButton(
+                    label: _loading ? 'Submitting…' : 'Submit Report',
+                    onTap: _loading ? null : _submit,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
