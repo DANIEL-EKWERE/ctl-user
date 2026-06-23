@@ -1,0 +1,137 @@
+name: ctluser
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+2
+
+environment:
+  sdk: ^3.10.0
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Icons
+  cupertino_icons:
+  flutter_svg:
+  cached_network_image:
+  flutter_rating_bar:
+  smooth_page_indicator:
+  pin_code_fields:
+  timelines_plus:
+  grouped_list:
+  google_fonts: ^8.1.0
+  share_plus: ^13.1.0
+  flutter_secure_storage: ^10.3.1
+  geolocator: ^14.0.2
+  geocoding: ^4.0.0
+  image_picker: ^1.0.7
+  shimmer: ^3.0.0
+
+  # Payments WebView
+  webview_flutter: ^4.7.0
+
+
+  # State management & navigation
+  get:
+
+  # Storage & connectivity
+  shared_preferences:
+  connectivity_plus:
+  dio:
+
+
+  # Forms & input
+  intl_phone_number_input:
+  country_pickers:
+  dropdown_search:
+  sms_autofill:
+
+  # Utilities
+  intl:
+  overlay_kit:
+
+  # Auth
+  google_sign_in: ^7.2.0
+  lucide_icons_flutter: ^3.1.11
+  provider: ^6.1.5+1
+  google_places_flutter: ^2.1.1
+  launcher_name: ^1.0.2
+  flutter_launcher_icons: ^0.14.4
+  flutter_inappwebview: ^6.1.5
+  atomic_webview: ^0.0.7
+  change_app_package_name: ^1.5.0
+  firebase_core: ^4.11.0
+  firebase_auth: ^6.5.3
+  cloud_firestore: ^6.6.0
+  firebase_messaging: ^16.4.0
+  flutter_local_notifications: ^22.0.1
+  device_info_plus: ^13.1.0
+  fluttertoast: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/
+    - assets/images/
+    - shorebird.yaml
+
+launcher_name:
+  default: "NKsereke"
+
+  # fonts:
+  #   - family: Poppins
+  #     fonts:
+  #       - asset: assets/fonts/Poppins-Regular.ttf
+  #         weight: 400
+  #       - asset: assets/fonts/Poppins-Medium.ttf
+  #         weight: 500
+  #       - asset: assets/fonts/Poppins-SemiBold.ttf
+  #         weight: 600
+  #       - asset: assets/fonts/Poppins-Bold.ttf
+  #         weight: 700
+  #       - asset: assets/fonts/Poppins-ExtraBold.ttf
+  #         weight: 800  
+
+flutter_launcher_icons:
+  image_path: "assets/images/1024.png"
+  android:
+    generate: true
+    image_path: "assets/images/1024.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  linux:
+    generate: true
+    image_path: "assets/images/1024.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  ios:
+    generate: true
+    image_path: "assets/images/1024.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+    remove_alpha_ios: true
+  web:
+    generate: true
+    image_path: "assets/images/1024.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+  windows:
+    generate: true
+    image_path: "assets/images/1024.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"
+    icon_size: 256
+  macos:
+    generate: true
+    image_path: "assets/images/1024.png"
+    background_color: "#ffffff"
+    theme_color: "#ffffff"  
