@@ -57,9 +57,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     borderRadius: BorderRadius.circular(18),
                     boxShadow: [const BoxShadow(color: Color(0x33000000), blurRadius: 10, offset: Offset(0, 4))],
                   ),
-                  child: const Center(
-                    child: Text('NK',
-                        style: TextStyle(color: AppColors.orange, fontSize: 24, fontWeight: FontWeight.w900)),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(18),
+                    child: Image.asset(
+                      'assets/images/logo.jpeg',
+                      width: 72,
+                      height: 72,
+                      fit: BoxFit.cover,
+                    ),
                   ),
                 ),
                 const SizedBox(height: 12),

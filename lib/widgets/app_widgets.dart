@@ -192,25 +192,37 @@ class AvatarFallback extends StatelessWidget {
     this.borderRadius,
   });
 
+  bool get _useLogo => initials == 'NK';
+
   @override
-  Widget build(BuildContext context) => Container(
-    width: size,
-    height: size,
-    decoration: BoxDecoration(
-      color: bg,
-      borderRadius: borderRadius ?? BorderRadius.circular(11),
-    ),
-    child: Center(
-      child: Text(
-        initials.substring(0, initials.length >= 2 ? 2 : 1),
-        style: TextStyle(
-          color: fg,
-          fontWeight: FontWeight.w800,
-          fontSize: size * 0.3,
-        ),
+  Widget build(BuildContext context) {
+    final br = borderRadius ?? BorderRadius.circular(11);
+    return ClipRRect(
+      borderRadius: br,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(color: bg, borderRadius: br),
+        child: _useLogo
+            ? Image.asset(
+                'assets/images/logo.jpeg',
+                fit: BoxFit.cover,
+                width: size,
+                height: size,
+              )
+            : Center(
+                child: Text(
+                  initials.substring(0, initials.length >= 2 ? 2 : 1),
+                  style: TextStyle(
+                    color: fg,
+                    fontWeight: FontWeight.w800,
+                    fontSize: size * 0.3,
+                  ),
+                ),
+              ),
       ),
-    ),
-  );
+    );
+  }
 }
 
 // ─── Status Badge ────────────────────────────────────────────────────────────
