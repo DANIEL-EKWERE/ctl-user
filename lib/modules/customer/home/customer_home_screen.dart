@@ -2982,19 +2982,19 @@ class _VendorDetailScreenState extends State<VendorDetailScreen> {
               v.bannerUrl != null
                   ? CachedNetworkImage(
                       imageUrl: v.bannerUrl!,
-                      height: 120,
+                      height: 210,
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorWidget: (_, __, ___) =>
-                          Container(height: 120, color: AppColors.navyLight),
+                          Container(height: 210, color: AppColors.navyLight),
                     )
                   : Container(
-                      height: 120,
+                      height: 210,
                       color: AppColors.navyLight,
                       child: const Center(
                         child: Icon(
                           Icons.restaurant,
-                          size: 40,
+                          size: 48,
                           color: Colors.white30,
                         ),
                       ),
