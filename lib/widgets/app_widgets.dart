@@ -205,7 +205,7 @@ class AvatarFallback extends StatelessWidget {
         decoration: BoxDecoration(color: bg, borderRadius: br),
         child: _useLogo
             ? Image.asset(
-                'assets/images/logo.jpeg',
+                'assets/images/logo.png',
                 fit: BoxFit.cover,
                 width: size,
                 height: size,

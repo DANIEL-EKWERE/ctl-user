@@ -304,7 +304,7 @@
 //                 ),
 //                 child: Center(
 //                   child: Image.asset(
-//                     'assets/images/logo.jpeg',
+//                     'assets/images/logo.png',
 //                     fit: BoxFit.cover,
 //                   ),
 //                 ),
@@ -764,7 +764,7 @@
 //                 child: Padding(
 //                   padding: const EdgeInsets.all(2.0),
 //                   child: Image.asset(
-//                     'assets/images/logo.jpeg',
+//                     'assets/images/logo.png',
 //                     fit: BoxFit.contain,
 //                   ),
 //                 ),
@@ -1973,11 +1973,17 @@ class _LocationOnboardingState extends State<LocationOnboardingScreen> {
         ctrl.locationReady.value = true;
         if (ctx.mounted && Navigator.of(ctx).canPop()) Navigator.of(ctx).pop();
       } else {
-        showToast('Could not find address for this location. Please select manually.', isError: true);
+        showToast(
+          'Could not find address for this location. Please select manually.',
+          isError: true,
+        );
       }
     } catch (e) {
       myLog.log('Location error: $e');
-      showToast('Failed to get GPS location. Please select manually.', isError: true);
+      showToast(
+        'Failed to get GPS location. Please select manually.',
+        isError: true,
+      );
     }
   }
 
@@ -2008,7 +2014,7 @@ class _LocationOnboardingState extends State<LocationOnboardingScreen> {
                 ),
                 child: Center(
                   child: Image.asset(
-                    'assets/images/logo.jpeg',
+                    'assets/images/logo.png',
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -2468,7 +2474,7 @@ class _OrangeHeader extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.all(2.0),
                   child: Image.asset(
-                    'assets/images/logo.jpeg',
+                    'assets/images/logo.png',
                     fit: BoxFit.contain,
                   ),
                 ),

@@ -141,7 +141,7 @@
 //               borderRadius: BorderRadius.circular(22),
 //             ),
 //             child: Center(
-//               child: Image.asset('assets/images/logo.jpeg', fit: BoxFit.cover),
+//               child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
 //             ),
 //           ),
 //           const SizedBox(height: 16),
@@ -330,7 +330,7 @@ class _SplashScreenState extends State<_SplashScreen> {
               borderRadius: BorderRadius.circular(22),
             ),
             child: Center(
-              child: Image.asset('assets/images/logo.jpeg', fit: BoxFit.cover),
+              child: Image.asset('assets/images/logo.png', fit: BoxFit.cover),
             ),
           ),
           const SizedBox(height: 16),
