@@ -734,20 +734,35 @@ class RiderDashboard {
   final int pendingDeliveries;
   final bool isAvailable;
 
+  /// e.g. `pending`, `approved`, `rejected` — null if the API omits it.
+  final String? approvalStatus;
+
   RiderDashboard({
     required this.totalDeliveries,
     required this.totalEarnings,
     required this.pendingDeliveries,
     this.isAvailable = false,
+    this.approvalStatus,
   });
 
   factory RiderDashboard.fromJson(Map<String, dynamic> j) {
     final d = j['data'] ?? j;
+    final approved = d['is_approved'];
     return RiderDashboard(
       totalDeliveries: d['total_deliveries'] ?? 0,
       totalEarnings: AppUtils.parsePrice(d['total_earnings'] ?? 0),
       pendingDeliveries: d['pending_deliveries'] ?? 0,
       isAvailable: d['is_available'] == true || d['is_available'] == 1,
+      approvalStatus:
+          (d['approval_status'] ??
+                  d['status'] ??
+                  (approved == null
+                      ? null
+                      : (approved == true || approved == 1)
+                      ? 'approved'
+                      : 'pending'))
+              ?.toString()
+              .toLowerCase(),
     );
   }
 }

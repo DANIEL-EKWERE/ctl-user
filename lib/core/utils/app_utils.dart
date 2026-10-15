@@ -37,4 +37,22 @@ class AppUtils {
   static double parsePrice(dynamic val) {
     return double.tryParse(val.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
   }
+
+  /// Finds the first value stored under [key] anywhere in a nested API
+  /// response (the backend wraps payloads in varying levels of `data`).
+  static dynamic findKey(dynamic node, String key) {
+    if (node is Map) {
+      if (node[key] != null) return node[key];
+      for (final v in node.values) {
+        final found = findKey(v, key);
+        if (found != null) return found;
+      }
+    } else if (node is List) {
+      for (final v in node) {
+        final found = findKey(v, key);
+        if (found != null) return found;
+      }
+    }
+    return null;
+  }
 }

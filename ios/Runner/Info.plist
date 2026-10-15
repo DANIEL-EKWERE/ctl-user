@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>NKsereke uses the camera so riders can photograph their verification documents.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>NKsereke needs photo access so riders can upload their verification documents.</string>
 </dict>
 </plist>

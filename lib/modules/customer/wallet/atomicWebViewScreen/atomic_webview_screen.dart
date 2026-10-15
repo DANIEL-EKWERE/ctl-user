@@ -8,9 +8,13 @@ import 'package:ctluser/core/utils/toast.dart';
 //WalletController walletController = Get.put(WalletController());
 
 class AtomicWebViewScreen extends StatefulWidget {
-  AtomicWebViewScreen({super.key, this.url = ''});
+  AtomicWebViewScreen({super.key, this.url = '', this.isOrderPayment = false});
 
   final String? url;
+
+  /// When true the screen pops with the gateway callback URL (so the caller
+  /// can verify the payment) instead of treating it as a wallet top-up.
+  final bool isOrderPayment;
 
   @override
   State<AtomicWebViewScreen> createState() => _AtomicWebViewScreenState();
@@ -121,10 +125,16 @@ class _AtomicWebViewScreenState extends State<AtomicWebViewScreen> {
                 return;
               }
 
-              // Successful callback — wallet funded
+              // Gateway redirected back to our callback
               if (urlStr.startsWith(callback_url) ||
                   urlStr.startsWith(callback_url2) ||
                   urlStr.startsWith(callback_url3)) {
+                if (widget.isOrderPayment) {
+                  if (Navigator.of(context).canPop()) {
+                    Navigator.pop(context, urlStr);
+                  }
+                  return;
+                }
                 if (Navigator.of(context).canPop()) Navigator.pop(context);
                 ctrl.loadWallet();
                 showToast('Wallet funded successfully!');

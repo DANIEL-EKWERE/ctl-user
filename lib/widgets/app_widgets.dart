@@ -464,3 +464,27 @@ class QtyRow extends StatelessWidget {
     ),
   );
 }
+
+// ─── Bank Account Row Menu ────────────────────────────────────────────────────
+class BankAccountMenu extends StatelessWidget {
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  const BankAccountMenu({
+    super.key,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  @override
+  Widget build(BuildContext context) => PopupMenuButton<String>(
+    icon: const Icon(Icons.more_vert, color: AppColors.textSecondary),
+    onSelected: (v) => v == 'edit' ? onEdit() : onDelete(),
+    itemBuilder: (_) => const [
+      PopupMenuItem(value: 'edit', child: Text('Edit')),
+      PopupMenuItem(
+        value: 'delete',
+        child: Text('Remove', style: TextStyle(color: AppColors.red)),
+      ),
+    ],
+  );
+}

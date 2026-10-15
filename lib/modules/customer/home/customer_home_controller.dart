@@ -921,6 +921,42 @@ class CustomerHomeController extends GetxController {
     return false;
   }
 
+  /// No update endpoint exists, so save the corrected account first and
+  /// only then remove the old one — the user is never left without one.
+  Future<bool> updateBankAccount(
+    BankAccount old,
+    Map<String, dynamic> data,
+  ) async {
+    final add = await _api.addBankAccount(data, token!);
+    if (add['success'] != true) {
+      showToast(add['message'] ?? 'Could not save changes', isError: true);
+      return false;
+    }
+    final del = await _api.deleteBankAccount(old.id, token!);
+    await loadWallet();
+    if (del['success'] != true) {
+      showToast(
+        'New details saved, but the old account could not be removed: '
+        '${del['message'] ?? 'unknown error'}',
+        isError: true,
+      );
+      return true;
+    }
+    showToast('Bank account updated');
+    return true;
+  }
+
+  Future<bool> deleteBankAccount(BankAccount account) async {
+    final res = await _api.deleteBankAccount(account.id, token!);
+    if (res['success'] == true) {
+      await loadWallet();
+      showToast('Bank account removed');
+      return true;
+    }
+    showToast(res['message'] ?? 'Failed to remove account', isError: true);
+    return false;
+  }
+
   Future<bool> withdrawFromWallet({
     required double amount,
     required int bankAccountId,

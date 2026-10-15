@@ -9,6 +9,7 @@ import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../auth/auth_controller.dart';
 import '../dashboard/rider_controller.dart';
+import '../onboarding/rider_onboarding_screen.dart';
 
 String _dateLabel(String? createdAt) {
   if (createdAt == null) return 'Earlier';
@@ -140,6 +141,7 @@ class RiderDashboardTab extends StatelessWidget {
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _DashHeader()),
+                const SliverToBoxAdapter(child: _OnboardingBanner()),
                 SliverToBoxAdapter(child: _AvailOrders()),
               ],
             ),
@@ -267,6 +269,99 @@ class _DashHeader extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// Tells a new rider what is blocking activation and links to the form.
+class _OnboardingBanner extends StatelessWidget {
+  const _OnboardingBanner();
+
+  @override
+  Widget build(BuildContext context) {
+    final ctrl = RiderController.to;
+    return Obx(() {
+      if (ctrl.riderInfo.value == null) return const SizedBox.shrink();
+      final missing = ctrl.missingOnboardingItems;
+      final rejected = ctrl.approvalStatus == 'rejected';
+      if (missing.isEmpty && !ctrl.awaitingApproval) {
+        return const SizedBox.shrink();
+      }
+
+      final String title;
+      final String body;
+      final IconData icon;
+      final Color tint;
+      if (missing.isNotEmpty) {
+        title = 'Complete your rider profile';
+        body =
+            'Add the following to get approved and start delivering: '
+            '${missing.join(', ')}.';
+        icon = Icons.assignment_late_outlined;
+        tint = AppColors.orange;
+      } else if (rejected) {
+        title = 'Application not approved';
+        body =
+            'Please review and update your details, then resubmit. '
+            'Contact support if you need help.';
+        icon = Icons.error_outline;
+        tint = AppColors.red;
+      } else {
+        title = 'Awaiting approval';
+        body =
+            'Your details have been submitted and are under review. '
+            "We'll notify you once your account is approved — then you can go online.";
+        icon = Icons.hourglass_top_rounded;
+        tint = AppColors.navy;
+      }
+
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: tint.withValues(alpha: 0.5)),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(icon, color: tint, size: 20),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.navy,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            Text(
+              body,
+              style: const TextStyle(
+                fontSize: 12,
+                color: AppColors.textSecondary,
+                height: 1.4,
+              ),
+            ),
+            if (missing.isNotEmpty || rejected) ...[
+              const SizedBox(height: 12),
+              AppButton(
+                label: missing.isNotEmpty ? 'Complete Profile' : 'Update Details',
+                height: 42,
+                onTap: () => Get.to(() => const RiderOnboardingScreen()),
+              ),
+            ],
+          ],
+        ),
+      );
+    });
+  }
 }
 
 class _AvailOrders extends StatelessWidget {
@@ -1101,6 +1196,7 @@ class _BankAccountsSheet extends StatefulWidget {
 class _BankAccountsSheetState extends State<_BankAccountsSheet> {
   final ctrl = RiderController.to;
   bool _adding = false;
+  BankAccount? _editing; // set when the form is editing an existing account
 
   final _bankCtrl = TextEditingController();
   final _acctNumCtrl = TextEditingController();
@@ -1154,14 +1250,65 @@ class _BankAccountsSheetState extends State<_BankAccountsSheet> {
       return;
     }
     setState(() => _saving = true);
-    final ok = await ctrl.addBankAccount({
+    final data = {
       'bank_code': _selectedBank!.code,
       'bank_name': _selectedBank!.name,
       'account_number': _acctNumCtrl.text.trim(),
       'account_name': _acctNameCtrl.text.trim(),
-    });
+    };
+    final ok = _editing != null
+        ? await ctrl.updateBankAccount(_editing!, data)
+        : await ctrl.addBankAccount(data);
+    if (!mounted) return;
     setState(() => _saving = false);
-    if (ok && mounted) setState(() => _adding = false);
+    if (ok) _closeForm();
+  }
+
+  void _openForm([BankAccount? account]) {
+    setState(() {
+      _editing = account;
+      _adding = true;
+      _acctNumCtrl.text = account?.accountNumber ?? '';
+      _acctNameCtrl.text = account?.accountName ?? '';
+      _selectedBank = account == null
+          ? null
+          : ctrl.availableBanks.firstWhereOrNull(
+                  (b) => b.code == account.bankCode,
+                ) ??
+                BankOption(name: account.bankName, code: account.bankCode);
+    });
+  }
+
+  void _closeForm() => setState(() {
+    _adding = false;
+    _editing = null;
+    _selectedBank = null;
+    _acctNumCtrl.clear();
+    _acctNameCtrl.clear();
+  });
+
+  Future<void> _confirmDelete(BankAccount b) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remove bank account?'),
+        content: Text('${b.bankName} · ${b.accountNumber}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: AppColors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (yes == true) await ctrl.deleteBankAccount(b);
   }
 
   @override
@@ -1190,10 +1337,10 @@ class _BankAccountsSheetState extends State<_BankAccountsSheet> {
               padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Bank Accounts',
-                      style: TextStyle(
+                      _editing != null ? 'Edit Bank Account' : 'Bank Accounts',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: AppColors.navy,
@@ -1201,7 +1348,7 @@ class _BankAccountsSheetState extends State<_BankAccountsSheet> {
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: () => setState(() => _adding = !_adding),
+                    onPressed: () => _adding ? _closeForm() : _openForm(),
                     icon: Icon(_adding ? Icons.close : Icons.add, size: 18),
                     label: Text(_adding ? 'Cancel' : 'Add New'),
                   ),
@@ -1276,7 +1423,11 @@ class _BankAccountsSheetState extends State<_BankAccountsSheet> {
                     SizedBox(
                       width: double.infinity,
                       child: AppButton(
-                        label: _saving ? 'Saving…' : 'Save Account',
+                        label: _saving
+                            ? 'Saving…'
+                            : _editing != null
+                            ? 'Save Changes'
+                            : 'Save Account',
                         onTap: _saving ? null : _save,
                       ),
                     ),
@@ -1322,31 +1473,15 @@ class _BankAccountsSheetState extends State<_BankAccountsSheet> {
                                 ),
                               ),
                               subtitle: Text(
-                                '${b.bankName} · ${b.accountNumber}',
+                                '${b.bankName} · ${b.accountNumber}'
+                                '${b.isDefault ? ' · Default' : ''}',
                                 style: const TextStyle(fontSize: 12),
                               ),
-                              trailing: b.isDefault
-                                  ? Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 3,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.green.withValues(
-                                          alpha: 0.12,
-                                        ),
-                                        borderRadius: BorderRadius.circular(20),
-                                      ),
-                                      child: const Text(
-                                        'Default',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: AppColors.green,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                    )
-                                  : null,
+                              onTap: () => _openForm(b),
+                              trailing: BankAccountMenu(
+                                onEdit: () => _openForm(b),
+                                onDelete: () => _confirmDelete(b),
+                              ),
                             );
                           },
                         ),
@@ -1721,7 +1856,7 @@ class RiderAccountTab extends StatelessWidget {
                   ),
                   _t(
                     Icons.delivery_dining_outlined,
-                    'Vehicle Info',
+                    'Vehicle, Guarantor & Documents',
                     () => Get.to(() => const RiderVehicleInfoScreen()),
                   ),
                   _t(
@@ -1985,10 +2120,26 @@ class _RiderVehicleInfoState extends State<RiderVehicleInfoScreen> {
     }
   }
 
+  Future<void> _edit() async {
+    final updated = await Get.to(() => const RiderOnboardingScreen());
+    if (updated == true) _load();
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.bg,
     appBar: OrangeTopBar(title: 'Vehicle Info'),
+    bottomNavigationBar: _loading
+        ? null
+        : SafeArea(
+            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: AppButton(
+              label: _error != null
+                  ? 'Submit Details & Documents'
+                  : 'Update Details & Documents',
+              onTap: _edit,
+            ),
+          ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _error != null

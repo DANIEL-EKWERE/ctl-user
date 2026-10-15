@@ -21,6 +21,19 @@ class AccountScreen extends StatefulWidget {
 
 class _AccountScreenState extends State<AccountScreen> {
   @override
+  void initState() {
+    super.initState();
+    AuthController.to.refreshCustomerProfile().then((_) {
+      if (mounted) setState(() {});
+    });
+  }
+
+  Future<void> _openProfile() async {
+    await Get.toNamed(AppRoutes.editProfile);
+    if (mounted) setState(() {});
+  }
+
+  @override
   Widget build(BuildContext context) {
     final auth = AuthController.to;
     final ctrl = CustomerHomeController.to;
@@ -68,30 +81,45 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               child: Column(
                 children: [
-                  CircleAvatar(
-                    radius: 36,
-                    backgroundColor: AppColors.navy,
-                    child: Text(
-                      u?.initials ?? 'NK',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 22,
-                        fontWeight: FontWeight.w700,
-                      ),
+                  GestureDetector(
+                    onTap: _openProfile,
+                    child: Column(
+                      children: [
+                        CircleAvatar(
+                          radius: 36,
+                          backgroundColor: AppColors.navy,
+                          child: Text(
+                            u?.initials ?? 'NK',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          u?.name ?? '',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        Text(
+                          u?.email ?? '',
+                          style: const TextStyle(
+                            color: Colors.white70,
+                            fontSize: 12,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        const Text(
+                          'Tap to edit profile',
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    u?.name ?? '',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  Text(
-                    u?.email ?? '',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                   if (u?.referralCode != null) ...[
                     const SizedBox(height: 8),
@@ -124,8 +152,8 @@ class _AccountScreenState extends State<AccountScreen> {
             _group([
               _tile(
                 Icons.person_outline,
-                'Edit Profile',
-                () => Get.toNamed(AppRoutes.editProfile),
+                'My Profile',
+                _openProfile,
               ),
               _tile(
                 Icons.lock_outline,
@@ -134,7 +162,7 @@ class _AccountScreenState extends State<AccountScreen> {
               ),
               _tile(
                 Icons.pin_outlined,
-                'Transaction PIN',
+                'Transaction PIN (create / reset)',
                 () => Get.toNamed(AppRoutes.setPin),
                 last: true,
               ),
@@ -508,7 +536,8 @@ class _SetPinState extends State<SetPinScreen> {
   bool loading = false;
   String? error;
   Future<void> _save() async {
-    if (_pinCtrl.text.length != 4 || _confCtrl.text.length != 4) {
+    final digits = RegExp(r'^\d{4}$');
+    if (!digits.hasMatch(_pinCtrl.text) || !digits.hasMatch(_confCtrl.text)) {
       setState(() => error = 'PIN must be 4 digits');
       return;
     }
@@ -527,8 +556,8 @@ class _SetPinState extends State<SetPinScreen> {
     );
     setState(() => loading = false);
     if (res['success'] == true) {
-      Get.back();
-      showToast('PIN set successfully');
+      Get.back(result: true);
+      showToast('PIN saved successfully');
     } else
       setState(() => error = res['message']);
   }
@@ -544,12 +573,19 @@ class _SetPinState extends State<SetPinScreen> {
           const Icon(Icons.lock_outline, size: 52, color: AppColors.orange),
           const SizedBox(height: 12),
           const Text(
-            'Set your 4-digit PIN',
+            'Create or reset your 4-digit PIN',
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w700,
               color: AppColors.navy,
             ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Your PIN authorizes wallet payments and withdrawals. '
+            'Saving a new PIN replaces any existing one.',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
           ),
           const SizedBox(height: 24),
           AppInput(
@@ -575,7 +611,7 @@ class _SetPinState extends State<SetPinScreen> {
             ),
           ],
           const SizedBox(height: 24),
-          AppButton(label: 'Set PIN', loading: loading, onTap: _save),
+          AppButton(label: 'Save PIN', loading: loading, onTap: _save),
         ],
       ),
     ),

@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/theme/app_theme.dart';
@@ -10,6 +11,7 @@ import '../../../widgets/app_widgets.dart';
 import '../../auth/auth_controller.dart';
 import '../cart/cart_controller.dart';
 import '../home/customer_home_controller.dart';
+import '../wallet/atomicWebViewScreen/atomic_webview_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
   const CheckoutScreen({super.key});
@@ -29,6 +31,8 @@ class _CheckoutState extends State<CheckoutScreen> {
   bool loading = false;
   bool addrLoading = false;
   String? error;
+  bool pinIssue = false; // last error was about the wallet PIN
+  dynamic _cardOrderId; // order created for a card payment not yet completed
 
   @override
   void initState() {
@@ -51,22 +55,19 @@ class _CheckoutState extends State<CheckoutScreen> {
   double get svcCharge => ctrl.calcServiceCharge(subtotal);
   double get total => subtotal + delivFee + svcCharge;
 
-  Future<void> _place(String pin) async {
+  /// Validates the cart/address and returns the common order payload, or
+  /// null (with [error] set) when the order can't be placed yet.
+  Future<Map<String, dynamic>?> _buildOrderPayload() async {
     final vc = cart.vendorCart(vendorId);
-    if (vc == null) return;
+    if (vc == null) return null;
 
     final addr = ctrl.checkoutAddress;
     if (addr == null) {
       setState(
         () => error = 'Please add a delivery address before placing an order.',
       );
-      return;
+      return null;
     }
-
-    setState(() {
-      loading = true;
-      error = null;
-    });
 
     int? addressId = addr.id;
     if (addressId == null && auth.customerToken != null) {
@@ -86,14 +87,14 @@ class _CheckoutState extends State<CheckoutScreen> {
       }
     }
 
-    final res = await ApiClient.instance.placeOrder({
+    return {
       'vendor_id': vendorId,
       if (addressId != null) 'address_id': addressId,
-      'payment_method': payMethod,
       'service_charge': svcCharge,
       'delivery_fee': delivFee,
       'delivery_address': addr.address,
-      if (payMethod == 'wallet') 'pin': pin,
+      if (addr.latitude != null) 'delivery_latitude': addr.latitude,
+      if (addr.longitude != null) 'delivery_longitude': addr.longitude,
       'items': vc.items
           .map(
             (i) => {
@@ -103,28 +104,190 @@ class _CheckoutState extends State<CheckoutScreen> {
             },
           )
           .toList(),
+    };
+  }
+
+  void _onOrderPlaced(dynamic orderId) {
+    cart.clearVendor(vendorId);
+    showToast('Order placed! Your order has been received.');
+    if (orderId != null) {
+      Get.offNamed(AppRoutes.orderDetail, arguments: orderId);
+    } else {
+      // Payment verified but no order id returned — show the Orders tab.
+      Get.until((route) => route.isFirst);
+      ctrl.switchTab(1);
+    }
+  }
+
+  Future<void> _place(String pin) async {
+    setState(() {
+      loading = true;
+      error = null;
+      pinIssue = false;
+    });
+
+    final payload = await _buildOrderPayload();
+    if (payload == null) {
+      setState(() => loading = false);
+      return;
+    }
+
+    final res = await ApiClient.instance.placeOrder({
+      ...payload,
+      'payment_method': 'wallet',
+      'pin': pin,
     }, auth.customerToken!);
 
     setState(() => loading = false);
 
     if (res['success'] == true) {
-      cart.clearVendor(vendorId);
       final body = res['data'] as Map<String, dynamic>;
-      final orderId = body['data']?['id'] ?? body['order']?['id'];
-      Get.offNamed(AppRoutes.orderDetail, arguments: orderId);
-      showToast('Order placed! Your order has been received.');
+      _onOrderPlaced(body['data']?['id'] ?? body['order']?['id']);
+    } else {
+      final msg = (res['message'] ?? 'Failed to place order. Please try again.')
+          .toString();
+      setState(() {
+        error = msg;
+        pinIssue = msg.toLowerCase().contains('pin');
+      });
+    }
+  }
+
+  /// Card checkout: create the order (`customer/orders`, payment_method
+  /// paystack), initiate its payment via `payments/order` with the order_id,
+  /// complete it in the Paystack WebView, then verify the reference.
+  Future<void> _payWithCard() async {
+    setState(() {
+      loading = true;
+      error = null;
+      pinIssue = false;
+    });
+
+    final payload = await _buildOrderPayload();
+    if (payload == null) {
+      setState(() => loading = false);
+      return;
+    }
+
+    // Reuse the order from an earlier abandoned card attempt so retrying
+    // payment doesn't create duplicate orders.
+    var orderId = _cardOrderId;
+    if (orderId == null) {
+      // The API rejects 'card'; card orders are tagged with the gateway.
+      final orderRes = await ApiClient.instance.placeOrder({
+        ...payload,
+        'payment_method': 'paystack',
+      }, auth.customerToken!);
+      if (orderRes['success'] != true) {
+        setState(() {
+          loading = false;
+          error = orderRes['message'] ?? 'Could not create your order.';
+        });
+        return;
+      }
+      final body = orderRes['data'] as Map<String, dynamic>;
+      final order = AppUtils.findKey(body, 'order');
+      orderId =
+          body['data']?['id'] ??
+          (order is Map ? order['id'] : null) ??
+          AppUtils.findKey(body, 'order_id');
+      if (orderId == null) {
+        setState(() {
+          loading = false;
+          error = 'Order was created but no order id was returned.';
+        });
+        return;
+      }
+      _cardOrderId = orderId;
+    }
+
+    final res = await ApiClient.instance.initiateOrderPayment({
+      'order_id': orderId,
+      'vendor_id': vendorId,
+      'amount': total,
+      'gateway': 'paystack',
+      'items': payload['items'],
+      'delivery_address': payload['delivery_address'],
+    }, auth.customerToken!);
+
+    if (res['success'] != true) {
+      setState(() {
+        loading = false;
+        error = res['message'] ?? 'Could not start card payment.';
+      });
+      return;
+    }
+
+    final authUrl = AppUtils.findKey(res['data'], 'authorization_url');
+    final initRef = AppUtils.findKey(res['data'], 'reference');
+    if (authUrl == null) {
+      setState(() {
+        loading = false;
+        error = 'Payment gateway did not return a payment link.';
+      });
+      return;
+    }
+
+    setState(() => loading = false);
+    if (!mounted) return;
+    final callbackUrl = await Navigator.push<String>(
+      context,
+      CupertinoPageRoute(
+        builder: (_) => AtomicWebViewScreen(
+          url: authUrl.toString(),
+          isOrderPayment: true,
+        ),
+      ),
+    );
+    if (callbackUrl == null) {
+      showToast('Payment was not completed.', isError: true);
+      return;
+    }
+
+    final params = Uri.tryParse(callbackUrl)?.queryParameters ?? {};
+    final reference =
+        params['reference'] ?? params['trxref'] ?? initRef?.toString();
+    if (reference == null) {
+      setState(
+        () => error =
+            'Payment finished but no reference was returned. Check your orders shortly.',
+      );
+      return;
+    }
+
+    setState(() => loading = true);
+    final verify = await ApiClient.instance.verifyPayment(
+      reference,
+      auth.customerToken!,
+    );
+    setState(() => loading = false);
+
+    if (verify['success'] == true) {
+      _cardOrderId = null;
+      _onOrderPlaced(orderId);
     } else {
       setState(
         () => error =
-            res['message'] ?? 'Failed to place order. Please try again.',
+            verify['message'] ??
+            'We could not confirm your payment. If you were charged, contact support.',
       );
     }
   }
 
+  Future<void> _openSetPin() async {
+    final created = await Get.toNamed(AppRoutes.setPin);
+    if (created == true && mounted) {
+      setState(() {
+        error = null;
+        pinIssue = false;
+      });
+      await _promptTransactionPin();
+    }
+  }
+
   Future<void> _promptTransactionPin() async {
-    // Card payments don't use a PIN — place order directly
     if (payMethod == 'card') {
-      await _place('');
+      await _payWithCard();
       return;
     }
 
@@ -267,6 +430,18 @@ class _CheckoutState extends State<CheckoutScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 6),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(_setPinSignal),
+                      child: const Text(
+                        "Don't have a PIN? Create or reset it",
+                        style: TextStyle(
+                          color: AppColors.orange,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -276,10 +451,14 @@ class _CheckoutState extends State<CheckoutScreen> {
       },
     );
 
-    if (enteredPin != null) {
+    if (enteredPin == _setPinSignal) {
+      await _openSetPin();
+    } else if (enteredPin != null) {
       await _place(enteredPin);
     }
   }
+
+  static const _setPinSignal = '__set_pin__';
 
   @override
   Widget build(BuildContext context) {
@@ -564,6 +743,17 @@ class _CheckoutState extends State<CheckoutScreen> {
                         ),
                       ),
                     ),
+                    if (pinIssue)
+                      TextButton(
+                        onPressed: _openSetPin,
+                        child: const Text(
+                          'Set PIN',
+                          style: TextStyle(
+                            color: AppColors.orange,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
                   ],
                 ),
               ),

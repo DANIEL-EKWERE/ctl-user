@@ -274,6 +274,22 @@ class AuthController extends GetxController {
     Get.offAllNamed(AppRoutes.login);
   }
 
+  /// Pulls the latest profile from the server so the account screen
+  /// reflects changes made elsewhere (e.g. on the website).
+  Future<void> refreshCustomerProfile() async {
+    if (customerToken == null) return;
+    final res = await _api.getProfile(customerToken!);
+    if (res['success'] != true) return;
+    final body = res['data'] as Map<String, dynamic>;
+    final data = body['data'];
+    final raw =
+        body['user'] ?? (data is Map && data['user'] != null ? data['user'] : data);
+    // Only accept something that actually looks like a user record.
+    if (raw is! Map<String, dynamic> || raw['email'] == null) return;
+    customerUser = AppUser.fromJson(raw);
+    await _storage.setCustomerUser(jsonEncode(raw));
+  }
+
   Future<void> updateCustomerProfile(String name, String phone) async {
     final updated = customerUser?.copyWith(name: name, phone: phone);
     if (updated == null) return;

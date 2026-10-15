@@ -417,6 +417,69 @@ class ApiClient {
     }
   }
 
+  Future<Map<String, dynamic>> delete(String path, {String? token}) async {
+    final url = Uri.parse('$_base/$path');
+    myLog.log('DELETE $url');
+    try {
+      final res = await http
+          .delete(url, headers: _headers(token: token))
+          .timeout(_timeout);
+      myLog.log('Response from $url: ${res.statusCode} - ${res.body}');
+      if (res.statusCode == 401) {
+        Get.to(() => LoginScreen());
+      }
+      // Some APIs answer DELETE with 204 No Content.
+      if (res.statusCode == 204 || res.body.trim().isEmpty) {
+        final ok = res.statusCode >= 200 && res.statusCode < 300;
+        return {
+          'success': ok,
+          'data': <String, dynamic>{},
+          'statusCode': res.statusCode,
+          if (!ok) 'message': 'Request failed (${res.statusCode})',
+        };
+      }
+      return _handleResponse(res);
+    } on TimeoutException {
+      return {'success': false, 'message': 'Request timed out'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
+  /// Multipart POST for endpoints that accept file uploads.
+  /// [files] maps a form field name to a local file path.
+  Future<Map<String, dynamic>> postMultipart(
+    String path, {
+    String? token,
+    Map<String, String> fields = const {},
+    Map<String, String> files = const {},
+  }) async {
+    final url = Uri.parse('$_base/$path');
+    myLog.log('MULTIPART $url fields: $fields files: ${files.keys.toList()}');
+    try {
+      final req = http.MultipartRequest('POST', url)
+        ..headers.addAll({
+          'Accept': 'application/json',
+          if (token != null) 'Authorization': 'Bearer $token',
+        })
+        ..fields.addAll(fields);
+      for (final f in files.entries) {
+        req.files.add(await http.MultipartFile.fromPath(f.key, f.value));
+      }
+      final streamed = await req.send().timeout(const Duration(seconds: 60));
+      final res = await http.Response.fromStream(streamed);
+      myLog.log('Response from $url: ${res.statusCode} - ${res.body}');
+      if (res.statusCode == 401) {
+        Get.to(() => LoginScreen());
+      }
+      return _handleResponse(res);
+    } on TimeoutException {
+      return {'success': false, 'message': 'Upload timed out'};
+    } catch (e) {
+      return {'success': false, 'message': e.toString()};
+    }
+  }
+
   // ─── Auth ────────────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> login(Map<String, dynamic> body) =>
       post('auth/login', body: body);
@@ -442,10 +505,22 @@ class ApiClient {
   Future<Map<String, dynamic>> resetPassword(Map<String, dynamic> data) =>
       post('auth/reset-password', body: data);
 
+  /// Expects `current_password`, `password` and `password_confirmation` in
+  /// [data]; also sends the `old_password` / `new_password*` names the API
+  /// documents so either backend convention is satisfied.
   Future<Map<String, dynamic>> changePassword(
     Map<String, dynamic> data,
     String token,
-  ) => post('auth/change-password', token: token, body: data);
+  ) => post(
+    'auth/change-password',
+    token: token,
+    body: {
+      ...data,
+      'old_password': data['current_password'],
+      'new_password': data['password'],
+      'new_password_confirmation': data['password_confirmation'],
+    },
+  );
 
   Future<Map<String, dynamic>> updateProfile(
     Map<String, dynamic> data,
@@ -488,7 +563,7 @@ class ApiClient {
 
   // ─── Customer ───────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> getProfile(String token) =>
-      get('customer/profile', token: token);
+      get('auth/profile', token: token);
 
   Future<Map<String, dynamic>> getOrders(String token) =>
       get('customer/orders', token: token);
@@ -511,6 +586,17 @@ class ApiClient {
     Map<String, dynamic> data,
     String token,
   ) => post('payments/fund-wallet', token: token, body: data);
+
+  /// Card checkout: creates the order payment and returns an
+  /// `authorization_url` to open in a WebView. `customer/orders` only
+  /// supports wallet payments (it requires a PIN).
+  Future<Map<String, dynamic>> initiateOrderPayment(
+    Map<String, dynamic> data,
+    String token,
+  ) => post('payments/order', token: token, body: data);
+
+  Future<Map<String, dynamic>> verifyPayment(String reference, String token) =>
+      get('payments/verify/$reference', token: token);
 
   Future<Map<String, dynamic>> getAddresses(String token) =>
       get('customer/addresses', token: token);
@@ -609,6 +695,22 @@ class ApiClient {
   Future<Map<String, dynamic>> getRiderInfo(String token) =>
       get('rider/info', token: token);
 
+  /// Submits rider onboarding details (vehicle, guarantor, address) and
+  /// document uploads via the update route (PUT rider/profile).
+  /// PHP can't read multipart bodies on a real PUT, so this is sent as POST
+  /// with Laravel's `_method=PUT` override. [files] maps document field
+  /// names to local paths.
+  Future<Map<String, dynamic>> submitRiderProfile(
+    Map<String, String> fields,
+    Map<String, String> files,
+    String token,
+  ) => postMultipart(
+    'rider/profile',
+    token: token,
+    fields: {...fields, '_method': 'PUT'},
+    files: files,
+  );
+
   Future<Map<String, dynamic>> toggleAvailability(String token) =>
       post('rider/toggle-availability', token: token);
 
@@ -638,6 +740,11 @@ class ApiClient {
     Map<String, dynamic> data,
     String token,
   ) => post('payments/bank-accounts', token: token, body: data);
+
+  /// The API has no update route (only DELETE on bank-accounts/{id}), so
+  /// editing is done as add-new + delete-old by the controllers.
+  Future<Map<String, dynamic>> deleteBankAccount(int id, String token) =>
+      delete('payments/bank-accounts/$id', token: token);
 
   Future<Map<String, dynamic>> withdrawEarnings(
     Map<String, dynamic> data,

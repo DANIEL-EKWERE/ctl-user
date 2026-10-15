@@ -691,6 +691,7 @@ class _CustomerBankAccountsSheetState
     extends State<_CustomerBankAccountsSheet> {
   final ctrl = CustomerHomeController.to;
   bool _adding = false;
+  BankAccount? _editing; // set when the form is editing an existing account
   bool _saving = false;
   bool _loadingBanks = false;
 
@@ -742,14 +743,65 @@ class _CustomerBankAccountsSheetState
       return;
     }
     setState(() => _saving = true);
-    final ok = await ctrl.addBankAccount({
+    final data = {
       'bank_code': _selectedBank!.code,
       'bank_name': _selectedBank!.name,
       'account_number': _acctNumCtrl.text.trim(),
       'account_name': _acctNameCtrl.text.trim(),
-    });
+    };
+    final ok = _editing != null
+        ? await ctrl.updateBankAccount(_editing!, data)
+        : await ctrl.addBankAccount(data);
+    if (!mounted) return;
     setState(() => _saving = false);
-    if (ok && mounted) setState(() => _adding = false);
+    if (ok) _closeForm();
+  }
+
+  void _openForm([BankAccount? account]) {
+    setState(() {
+      _editing = account;
+      _adding = true;
+      _acctNumCtrl.text = account?.accountNumber ?? '';
+      _acctNameCtrl.text = account?.accountName ?? '';
+      _selectedBank = account == null
+          ? null
+          : ctrl.availableBanks.firstWhereOrNull(
+                  (b) => b.code == account.bankCode,
+                ) ??
+                BankOption(name: account.bankName, code: account.bankCode);
+    });
+  }
+
+  void _closeForm() => setState(() {
+    _adding = false;
+    _editing = null;
+    _selectedBank = null;
+    _acctNumCtrl.clear();
+    _acctNameCtrl.clear();
+  });
+
+  Future<void> _confirmDelete(BankAccount b) async {
+    final yes = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        title: const Text('Remove bank account?'),
+        content: Text('${b.bankName} · ${b.accountNumber}'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text(
+              'Remove',
+              style: TextStyle(color: AppColors.red),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (yes == true) await ctrl.deleteBankAccount(b);
   }
 
   @override
@@ -778,10 +830,10 @@ class _CustomerBankAccountsSheetState
               padding: const EdgeInsets.fromLTRB(20, 16, 16, 4),
               child: Row(
                 children: [
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'Bank Accounts',
-                      style: TextStyle(
+                      _editing != null ? 'Edit Bank Account' : 'Bank Accounts',
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
                         color: AppColors.navy,
@@ -789,7 +841,7 @@ class _CustomerBankAccountsSheetState
                     ),
                   ),
                   TextButton.icon(
-                    onPressed: () => setState(() => _adding = !_adding),
+                    onPressed: () => _adding ? _closeForm() : _openForm(),
                     icon: Icon(_adding ? Icons.close : Icons.add, size: 18),
                     label: Text(_adding ? 'Cancel' : 'Add New'),
                   ),
@@ -859,7 +911,11 @@ class _CustomerBankAccountsSheetState
                     SizedBox(
                       width: double.infinity,
                       child: AppButton(
-                        label: _saving ? 'Saving…' : 'Save Account',
+                        label: _saving
+                            ? 'Saving…'
+                            : _editing != null
+                            ? 'Save Changes'
+                            : 'Save Account',
                         onTap: _saving ? null : _save,
                       ),
                     ),
@@ -898,12 +954,16 @@ class _CustomerBankAccountsSheetState
                                   style: const TextStyle(
                                       fontWeight: FontWeight.w700,
                                       fontSize: 14)),
-                              subtitle: Text(b.accountNumber,
-                                  style: const TextStyle(fontSize: 12)),
-                              trailing: Text(b.accountName,
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppColors.textSecondary)),
+                              subtitle: Text(
+                                '${b.accountName} · ${b.accountNumber}'
+                                '${b.isDefault ? ' · Default' : ''}',
+                                style: const TextStyle(fontSize: 12),
+                              ),
+                              onTap: () => _openForm(b),
+                              trailing: BankAccountMenu(
+                                onEdit: () => _openForm(b),
+                                onDelete: () => _confirmDelete(b),
+                              ),
                             );
                           },
                         ),
