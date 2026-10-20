@@ -10,6 +10,12 @@ class AppUser {
   final String? referralCode;
   final String? profilePicture;
 
+  // Rider onboarding state (only sent for the rider role).
+  final int onboardingStep; // 0-3: number of onboarding steps completed
+  final String? riderStatus; // pending | approved | rejected | blocked
+  final String? rejectionReason;
+  final bool canAccessDashboard;
+
   AppUser({
     required this.id,
     required this.name,
@@ -18,6 +24,10 @@ class AppUser {
     this.role,
     this.referralCode,
     this.profilePicture,
+    this.onboardingStep = 0,
+    this.riderStatus,
+    this.rejectionReason,
+    this.canAccessDashboard = false,
   });
 
   factory AppUser.fromJson(Map<String, dynamic> j) => AppUser(
@@ -28,6 +38,11 @@ class AppUser {
     role: j['role'],
     referralCode: j['referral_code'],
     profilePicture: j['profile_picture'],
+    onboardingStep: int.tryParse('${j['onboarding_step'] ?? 0}') ?? 0,
+    riderStatus: j['rider_status']?.toString(),
+    rejectionReason: j['rejection_reason']?.toString(),
+    canAccessDashboard:
+        j['can_access_dashboard'] == true || j['can_access_dashboard'] == 1,
   );
 
   String get initials => name.isNotEmpty
@@ -42,6 +57,10 @@ class AppUser {
     role: role,
     referralCode: referralCode,
     profilePicture: profilePicture,
+    onboardingStep: onboardingStep,
+    riderStatus: riderStatus,
+    rejectionReason: rejectionReason,
+    canAccessDashboard: canAccessDashboard,
   );
 
   Map<String, dynamic> toJson() => {
@@ -52,6 +71,10 @@ class AppUser {
     'role': role,
     'referral_code': referralCode,
     'profile_picture': profilePicture,
+    'onboarding_step': onboardingStep,
+    'rider_status': riderStatus,
+    'rejection_reason': rejectionReason,
+    'can_access_dashboard': canAccessDashboard,
   };
 }
 

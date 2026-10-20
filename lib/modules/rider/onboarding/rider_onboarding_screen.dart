@@ -1,58 +1,66 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../../core/utils/app_utils.dart';
 import '../../../core/utils/toast.dart';
 import '../../../data/services/api_client.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../auth/auth_controller.dart';
-import '../dashboard/rider_controller.dart';
+import 'rider_gate.dart';
 
 // ─── Rider Onboarding ─────────────────────────────────────────────────────────
-// Lets a newly registered rider submit vehicle details, guarantor info,
-// address and the documents required for approval (POST rider/profile).
+// Three steps, each with its own endpoint:
+//   1. rider/onboarding/step-1  vehicle + guarantor details (JSON)
+//   2. rider/onboarding/step-2  profile_photo, means_of_id, driver_licence
+//   3. rider/onboarding/step-3  guarantor_id
+// After step 3 the rider is routed (via routeRider) to "awaiting approval".
 class RiderOnboardingScreen extends StatefulWidget {
-  const RiderOnboardingScreen({super.key});
+  /// 1-based step to open on (onboarding_step + 1).
+  final int startStep;
+  const RiderOnboardingScreen({super.key, this.startStep = 1});
+
   @override
   State<RiderOnboardingScreen> createState() => _RiderOnboardingState();
 }
 
 class _RiderOnboardingState extends State<RiderOnboardingScreen> {
-  final ctrl = RiderController.to;
+  final _api = ApiClient.instance;
   final _picker = ImagePicker();
+  String get _token => AuthController.to.riderToken!;
 
   static const _vehicleTypes = {
-    'motorcycle': 'Motorcycle',
-    'bicycle': 'Bicycle',
+    'bike': 'Motorbike',
     'tricycle': 'Tricycle (Keke)',
     'car': 'Car',
-    'van': 'Van',
   };
 
+  static const _step2Docs = {
+    'profile_photo': 'Profile photo',
+    'means_of_id': 'Means of ID (NIN, passport, voter’s card)',
+    'driver_licence': "Driver's licence",
+  };
+  static const _step3Docs = {'guarantor_id': "Guarantor's ID"};
+
+  late int _step = widget.startStep.clamp(1, 3);
+
+  // Step 1
   String? _vehicleType;
   final _plateCtrl = TextEditingController();
   final _licenseCtrl = TextEditingController();
   final _addressCtrl = TextEditingController();
-  final _cityCtrl = TextEditingController();
-  final _stateCtrl = TextEditingController();
   final _gNameCtrl = TextEditingController();
   final _gPhoneCtrl = TextEditingController();
 
-  /// Newly picked document files: field name -> local path.
-  final Map<String, String> _pickedDocs = {};
+  // Steps 2 & 3: field name -> local file path
+  final Map<String, String> _files = {};
 
-  bool _loading = true;
   bool _saving = false;
   String? _error;
-
-  Map<String, dynamic> get _info => ctrl.riderInfo.value ?? const {};
-  Map get _uploadedDocs =>
-      _info['documents'] is Map ? _info['documents'] as Map : const {};
 
   @override
   void initState() {
     super.initState();
-    _load();
+    _prefill();
   }
 
   @override
@@ -61,8 +69,6 @@ class _RiderOnboardingState extends State<RiderOnboardingScreen> {
       _plateCtrl,
       _licenseCtrl,
       _addressCtrl,
-      _cityCtrl,
-      _stateCtrl,
       _gNameCtrl,
       _gPhoneCtrl,
     ]) {
@@ -71,25 +77,104 @@ class _RiderOnboardingState extends State<RiderOnboardingScreen> {
     super.dispose();
   }
 
-  Future<void> _load() async {
-    await ctrl.loadRiderInfo();
-    if (!mounted) return;
-    final i = _info;
-    final vt = i['vehicle_type']?.toString().toLowerCase();
+  /// Fills step 1 from the existing rider record, if any (e.g. resubmitting
+  /// after a rejection). Riders without a record simply start empty.
+  Future<void> _prefill() async {
+    final res = await _api.getRiderInfo(_token);
+    if (!mounted || res['success'] != true) return;
+    String v(String k) => AppUtils.findKey(res['data'], k)?.toString() ?? '';
+    final vt = v('vehicle_type').toLowerCase();
     setState(() {
-      _vehicleType = _vehicleTypes.containsKey(vt) ? vt : null;
-      _plateCtrl.text = i['plate_number']?.toString() ?? '';
-      _licenseCtrl.text = i['license_number']?.toString() ?? '';
-      _addressCtrl.text = i['home_address']?.toString() ?? '';
-      _cityCtrl.text = i['current_city']?.toString() ?? '';
-      _stateCtrl.text = i['current_state']?.toString() ?? '';
-      _gNameCtrl.text = i['guarantor_name']?.toString() ?? '';
-      _gPhoneCtrl.text = i['guarantor_phone']?.toString() ?? '';
-      _loading = false;
+      _vehicleType ??= _vehicleTypes.containsKey(vt) ? vt : null;
+      if (_plateCtrl.text.isEmpty) _plateCtrl.text = v('plate_number');
+      if (_licenseCtrl.text.isEmpty) _licenseCtrl.text = v('license_number');
+      if (_addressCtrl.text.isEmpty) _addressCtrl.text = v('home_address');
+      if (_gNameCtrl.text.isEmpty) _gNameCtrl.text = v('guarantor_name');
+      if (_gPhoneCtrl.text.isEmpty) _gPhoneCtrl.text = v('guarantor_phone');
     });
   }
 
-  Future<void> _pickDoc(String field) async {
+  // ── Submission ──────────────────────────────────────────────────────────
+  Future<void> _continue() async {
+    final missing = _missingForStep();
+    if (missing.isNotEmpty) {
+      setState(() => _error = 'Please provide: ${missing.join(', ')}.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+
+    final Map<String, dynamic> res;
+    switch (_step) {
+      case 1:
+        res = await _api.riderOnboardingStep1({
+          'vehicle_type': _vehicleType,
+          'plate_number': _plateCtrl.text.trim(),
+          'license_number': _licenseCtrl.text.trim(),
+          'guarantor_name': _gNameCtrl.text.trim(),
+          'guarantor_phone': _gPhoneCtrl.text.trim(),
+          'home_address': _addressCtrl.text.trim(),
+        }, _token);
+      case 2:
+        res = await _api.riderOnboardingStep2({
+          for (final k in _step2Docs.keys) k: _files[k]!,
+        }, _token);
+      default:
+        res = await _api.riderOnboardingStep3({
+          for (final k in _step3Docs.keys) k: _files[k]!,
+        }, _token);
+    }
+    if (!mounted) return;
+    setState(() => _saving = false);
+
+    if (res['success'] != true) {
+      setState(() => _error = _errorText(res));
+      return;
+    }
+
+    await AuthController.to.applyRiderStatus(res['data']);
+    if (_step < 3) {
+      setState(() => _step++);
+    } else {
+      showToast('Application submitted! We will review it shortly.');
+      await routeRider(); // → awaiting approval
+    }
+  }
+
+  List<String> _missingForStep() => switch (_step) {
+    1 => [
+      if (_vehicleType == null) 'vehicle type',
+      if (_plateCtrl.text.trim().isEmpty) 'plate number',
+      if (_licenseCtrl.text.trim().isEmpty) 'license number',
+      if (_addressCtrl.text.trim().isEmpty) 'home address',
+      if (_gNameCtrl.text.trim().isEmpty) 'guarantor name',
+      if (_gPhoneCtrl.text.trim().isEmpty) 'guarantor phone',
+    ],
+    2 => [
+      for (final e in _step2Docs.entries)
+        if (!_files.containsKey(e.key)) e.value.split(' (').first,
+    ],
+    _ => [
+      for (final e in _step3Docs.entries)
+        if (!_files.containsKey(e.key)) e.value,
+    ],
+  };
+
+  /// Shows Laravel validation errors line by line when available.
+  String _errorText(Map<String, dynamic> res) {
+    final errors = res['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      return errors.values
+          .expand((v) => v is List ? v : [v])
+          .map((e) => e.toString())
+          .join('\n');
+    }
+    return res['message']?.toString() ?? 'Something went wrong. Try again.';
+  }
+
+  Future<void> _pick(String field) async {
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (_) => SafeArea(
@@ -117,190 +202,186 @@ class _RiderOnboardingState extends State<RiderOnboardingScreen> {
         imageQuality: 70,
         maxWidth: 1600,
       );
-      if (file != null) setState(() => _pickedDocs[field] = file.path);
+      if (file != null) {
+        setState(() {
+          _files[field] = file.path;
+          _error = null;
+        });
+      }
     } catch (e) {
       showToast('Could not open ${source.name}: $e', isError: true);
     }
   }
 
-  Future<void> _submit() async {
-    final missing = <String>[
-      if (_vehicleType == null) 'vehicle type',
-      if (_plateCtrl.text.trim().isEmpty) 'plate number',
-      if (_licenseCtrl.text.trim().isEmpty) 'license number',
-      if (_addressCtrl.text.trim().isEmpty) 'home address',
-      if (_gNameCtrl.text.trim().isEmpty) 'guarantor name',
-      if (_gPhoneCtrl.text.trim().isEmpty) 'guarantor phone',
-      for (final e in RiderController.requiredDocuments.entries)
-        if (_uploadedDocs[e.key] == null && !_pickedDocs.containsKey(e.key))
-          e.value.toLowerCase(),
-    ];
-    if (missing.isNotEmpty) {
-      setState(() => _error = 'Please provide: ${missing.join(', ')}.');
-      return;
-    }
-
-    setState(() {
-      _saving = true;
-      _error = null;
-    });
-    final res = await ApiClient.instance.submitRiderProfile(
-      {
-        'vehicle_type': _vehicleType!,
-        'plate_number': _plateCtrl.text.trim(),
-        'license_number': _licenseCtrl.text.trim(),
-        'home_address': _addressCtrl.text.trim(),
-        'current_city': _cityCtrl.text.trim(),
-        'current_state': _stateCtrl.text.trim(),
-        'guarantor_name': _gNameCtrl.text.trim(),
-        'guarantor_phone': _gPhoneCtrl.text.trim(),
-      },
-      _pickedDocs,
-      AuthController.to.riderToken!,
-    );
-    if (!mounted) return;
-    setState(() => _saving = false);
-
-    if (res['success'] == true) {
-      await ctrl.loadDashboard();
-      Get.back(result: true);
-      showToast('Details submitted. We will review your account shortly.');
-    } else if (res['statusCode'] == 404 ||
-        (res['message']?.toString().toLowerCase().contains('not found') ??
-            false)) {
-      // The backend only updates an existing rider record; accounts whose
-      // record was never created at signup can't be completed from the app.
-      setState(
-        () => _error =
-            "Your rider account hasn't been fully set up on our side yet, so "
-            'your details could not be saved. Please contact support and we '
-            'will activate it.',
-      );
-    } else {
-      final errors = res['errors'];
-      final detail = errors is Map
-          ? errors.values
-                .expand((v) => v is List ? v : [v])
-                .map((e) => e.toString())
-                .join('\n')
-          : null;
-      setState(
-        () => _error = detail?.isNotEmpty == true
-            ? detail
-            : (res['message'] ?? 'Could not submit your details.'),
-      );
-    }
-  }
-
+  // ── UI ──────────────────────────────────────────────────────────────────
   @override
-  Widget build(BuildContext context) => Scaffold(
-    backgroundColor: AppColors.bg,
-    appBar: OrangeTopBar(title: 'Rider Profile'),
-    body: _loading
-        ? const Center(
-            child: CircularProgressIndicator(color: AppColors.orange),
-          )
-        : ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              const Text(
-                'Complete these details so we can verify and activate your '
-                'account. You can go online once your account is approved.',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppColors.textSecondary,
-                  height: 1.4,
-                ),
+  Widget build(BuildContext context) => PopScope(
+    // System back steps backwards through the flow before leaving it.
+    canPop: _step <= widget.startStep,
+    onPopInvokedWithResult: (didPop, _) {
+      if (!didPop) setState(() => _step--);
+    },
+    child: Scaffold(
+      backgroundColor: AppColors.bg,
+      appBar: OrangeTopBar(
+        title: 'Become a Rider',
+        showBack: Navigator.of(context).canPop(),
+        actions: [
+          TextButton(
+            onPressed: AuthController.to.logout,
+            child: const Text(
+              'Log out',
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
+      ),
+      body: ListView(
+        padding: const EdgeInsets.all(16),
+        children: [
+          _progress(),
+          const SizedBox(height: 16),
+          ...switch (_step) {
+            1 => _step1(),
+            2 => _docsStep(
+              'Your documents',
+              'Upload clear photos. Make sure all text is readable.',
+              _step2Docs,
+            ),
+            _ => _docsStep(
+              "Guarantor's ID",
+              'Upload a valid ID belonging to your guarantor.',
+              _step3Docs,
+            ),
+          },
+          if (_error != null) ...[
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF2F2),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFFECACA)),
               ),
-              const SizedBox(height: 14),
-              _section('Vehicle', [
-                DropdownButtonFormField<String>(
-                  initialValue: _vehicleType,
-                  decoration: const InputDecoration(labelText: 'Vehicle type'),
-                  items: _vehicleTypes.entries
-                      .map(
-                        (e) => DropdownMenuItem(
-                          value: e.key,
-                          child: Text(e.value),
-                        ),
-                      )
-                      .toList(),
-                  onChanged: (v) => setState(() => _vehicleType = v),
-                ),
-                const SizedBox(height: 12),
-                AppInput(
-                  label: 'Plate number',
-                  hint: 'e.g. ABC-123-XY',
-                  controller: _plateCtrl,
-                ),
-                const SizedBox(height: 12),
-                AppInput(
-                  label: "Driver's license number",
-                  hint: 'License number',
-                  controller: _licenseCtrl,
-                ),
-              ]),
-              const SizedBox(height: 14),
-              _section('Address', [
-                AppInput(
-                  label: 'Home address',
-                  hint: 'Street and house number',
-                  controller: _addressCtrl,
-                ),
-                const SizedBox(height: 12),
-                AppInput(label: 'City', hint: 'e.g. Uyo', controller: _cityCtrl),
-                const SizedBox(height: 12),
-                AppInput(
-                  label: 'State',
-                  hint: 'e.g. Akwa Ibom',
-                  controller: _stateCtrl,
-                ),
-              ]),
-              const SizedBox(height: 14),
-              _section('Guarantor', [
-                AppInput(
-                  label: 'Guarantor full name',
-                  hint: 'Full name',
-                  controller: _gNameCtrl,
-                ),
-                const SizedBox(height: 12),
-                AppInput(
-                  label: 'Guarantor phone',
-                  hint: '08012345678',
-                  controller: _gPhoneCtrl,
-                  keyboardType: TextInputType.phone,
-                ),
-              ]),
-              const SizedBox(height: 14),
-              _section('Documents', [
-                for (final e in RiderController.requiredDocuments.entries)
-                  _docTile(e.key, e.value),
-              ]),
-              if (_error != null) ...[
-                const SizedBox(height: 12),
+              child: Text(
+                _error!,
+                style: const TextStyle(color: AppColors.red, fontSize: 13),
+              ),
+            ),
+          ],
+          const SizedBox(height: 20),
+          AppButton(
+            label: _step < 3 ? 'Save & Continue' : 'Submit Application',
+            loading: _saving,
+            onTap: _continue,
+          ),
+          if (_step > 1 && !_saving)
+            TextButton(
+              onPressed: () => setState(() {
+                _step--;
+                _error = null;
+              }),
+              child: const Text('Back'),
+            ),
+          const SizedBox(height: 24),
+        ],
+      ),
+    ),
+  );
+
+  Widget _progress() {
+    const labels = ['Details', 'Documents', 'Guarantor ID'];
+    return Row(
+      children: [
+        for (var i = 1; i <= 3; i++) ...[
+          Expanded(
+            child: Column(
+              children: [
                 Container(
-                  padding: const EdgeInsets.all(12),
+                  height: 4,
                   decoration: BoxDecoration(
-                    color: const Color(0xFFFEF2F2),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: const Color(0xFFFECACA)),
+                    color: i <= _step ? AppColors.orange : AppColors.border,
+                    borderRadius: BorderRadius.circular(2),
                   ),
-                  child: Text(
-                    _error!,
-                    style: const TextStyle(color: AppColors.red, fontSize: 13),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Step $i · ${labels[i - 1]}',
+                  style: TextStyle(
+                    fontSize: 11,
+                    fontWeight: i == _step ? FontWeight.w700 : FontWeight.w500,
+                    color: i == _step ? AppColors.navy : AppColors.textSecondary,
                   ),
                 ),
               ],
-              const SizedBox(height: 20),
-              AppButton(
-                label: 'Submit for Approval',
-                loading: _saving,
-                onTap: _submit,
-              ),
-              const SizedBox(height: 30),
-            ],
+            ),
           ),
-  );
+          if (i < 3) const SizedBox(width: 8),
+        ],
+      ],
+    );
+  }
+
+  List<Widget> _step1() => [
+    _section('Vehicle', [
+      DropdownButtonFormField<String>(
+        initialValue: _vehicleType,
+        decoration: const InputDecoration(labelText: 'Vehicle type'),
+        items: _vehicleTypes.entries
+            .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
+            .toList(),
+        onChanged: (v) => setState(() => _vehicleType = v),
+      ),
+      const SizedBox(height: 12),
+      AppInput(
+        label: 'Plate number',
+        hint: 'e.g. ABC-123-XY',
+        controller: _plateCtrl,
+      ),
+      const SizedBox(height: 12),
+      AppInput(
+        label: "Driver's licence number",
+        hint: 'Licence number',
+        controller: _licenseCtrl,
+      ),
+      const SizedBox(height: 12),
+      AppInput(
+        label: 'Home address',
+        hint: 'Street, area, city',
+        controller: _addressCtrl,
+      ),
+    ]),
+    const SizedBox(height: 14),
+    _section('Guarantor', [
+      AppInput(
+        label: 'Guarantor full name',
+        hint: 'Full name',
+        controller: _gNameCtrl,
+      ),
+      const SizedBox(height: 12),
+      AppInput(
+        label: 'Guarantor phone',
+        hint: '08012345678',
+        controller: _gPhoneCtrl,
+        keyboardType: TextInputType.phone,
+      ),
+    ]),
+  ];
+
+  List<Widget> _docsStep(
+    String title,
+    String subtitle,
+    Map<String, String> docs,
+  ) => [
+    _section(title, [
+      Text(
+        subtitle,
+        style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+      ),
+      const SizedBox(height: 8),
+      for (final e in docs.entries) _docTile(e.key, e.value),
+    ]),
+  ];
 
   Widget _section(String title, List<Widget> children) => Container(
     padding: const EdgeInsets.all(16),
@@ -327,28 +408,23 @@ class _RiderOnboardingState extends State<RiderOnboardingScreen> {
   );
 
   Widget _docTile(String field, String label) {
-    final picked = _pickedDocs.containsKey(field);
-    final uploaded = _uploadedDocs[field] != null;
-    final status = picked
-        ? 'Selected — will upload'
-        : uploaded
-        ? 'Uploaded'
-        : 'Required';
-    final color = picked || uploaded ? AppColors.green : AppColors.red;
+    final picked = _files.containsKey(field);
+    final color = picked ? AppColors.green : AppColors.textSecondary;
     return ListTile(
       contentPadding: EdgeInsets.zero,
       leading: Icon(
-        picked || uploaded
-            ? Icons.check_circle_outline
-            : Icons.upload_file_outlined,
+        picked ? Icons.check_circle_outline : Icons.upload_file_outlined,
         color: color,
       ),
       title: Text(label, style: const TextStyle(fontSize: 13)),
-      subtitle: Text(status, style: TextStyle(fontSize: 11, color: color)),
+      subtitle: Text(
+        picked ? 'Photo selected' : 'Required',
+        style: TextStyle(fontSize: 11, color: picked ? color : AppColors.red),
+      ),
       trailing: TextButton(
-        onPressed: () => _pickDoc(field),
+        onPressed: () => _pick(field),
         child: Text(
-          uploaded || picked ? 'Replace' : 'Upload',
+          picked ? 'Change' : 'Upload',
           style: const TextStyle(
             color: AppColors.orange,
             fontWeight: FontWeight.w700,

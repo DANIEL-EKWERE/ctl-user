@@ -30,52 +30,6 @@ class RiderController extends GetxController {
   final isAvailable = false.obs;
   final togglingAvailability = false.obs;
 
-  /// Onboarding record from `rider/info` (vehicle, guarantor, documents, status).
-  final riderInfo = Rxn<Map<String, dynamic>>();
-
-  static const requiredFields = {
-    'vehicle_type': 'Vehicle type',
-    'plate_number': 'Plate number',
-    'license_number': 'License number',
-    'home_address': 'Home address',
-    'guarantor_name': 'Guarantor name',
-    'guarantor_phone': 'Guarantor phone',
-  };
-
-  static const requiredDocuments = {
-    'means_of_id': 'Means of ID',
-    'drivers_license': "Driver's license",
-    'vehicle_document': 'Vehicle document',
-    'guarantor_form': 'Guarantor form',
-  };
-
-  /// Labels of onboarding items the rider still has to provide.
-  List<String> get missingOnboardingItems {
-    final info = riderInfo.value;
-    if (info == null) return [];
-    final docs = info['documents'] is Map ? info['documents'] as Map : const {};
-    return [
-      for (final e in requiredFields.entries)
-        if ((info[e.key]?.toString() ?? '').trim().isEmpty) e.value,
-      for (final e in requiredDocuments.entries)
-        if (docs[e.key] == null) e.value,
-    ];
-  }
-
-  String get approvalStatus =>
-      (riderInfo.value?['status'] ?? dashboard.value?.approvalStatus ?? '')
-          .toString()
-          .toLowerCase();
-
-  bool get isApproved =>
-      approvalStatus == 'approved' ||
-      approvalStatus == 'active' ||
-      riderInfo.value?['approved_at'] != null;
-
-  /// True only when the API reports a status and it isn't an approved one,
-  /// so riders aren't blocked if the backend omits the field.
-  bool get awaitingApproval => approvalStatus.isNotEmpty && !isApproved;
-
   Timer? _locationTimer;
 
   String? get token => AuthController.to.riderToken;
@@ -99,15 +53,8 @@ class RiderController extends GetxController {
       _api.getRiderDashboard(token!),
       _api.getAvailableOrders(token!, radiusKm: 10),
       _api.getMyDeliveries(token!),
-      _api.getRiderInfo(token!),
     ]);
     loading.value = false;
-
-    if (results[3]['success'] == true) {
-      final body = results[3]['data'] as Map<String, dynamic>;
-      final r = body['rider'] ?? body['data'] ?? body;
-      if (r is Map<String, dynamic>) riderInfo.value = r;
-    }
 
     if (results[0]['success'] == true) {
       final d = RiderDashboard.fromJson(results[0]['data']);
@@ -149,35 +96,8 @@ class RiderController extends GetxController {
     }
   }
 
-  Future<void> loadRiderInfo() async {
-    if (token == null) return;
-    final res = await _api.getRiderInfo(token!);
-    if (res['success'] == true) {
-      final body = res['data'] as Map<String, dynamic>;
-      final r = body['rider'] ?? body['data'] ?? body;
-      if (r is Map<String, dynamic>) riderInfo.value = r;
-    }
-  }
-
   Future<void> toggleAvailability() async {
     if (togglingAvailability.value) return;
-    // Explain why a rider can't go online instead of a silent failure.
-    if (!isAvailable.value && riderInfo.value != null) {
-      if (missingOnboardingItems.isNotEmpty) {
-        showToast(
-          'Complete your rider profile before going online.',
-          isError: true,
-        );
-        return;
-      }
-      if (awaitingApproval) {
-        showToast(
-          'Your account is awaiting approval. You can go online once approved.',
-          isError: true,
-        );
-        return;
-      }
-    }
     togglingAvailability.value = true;
     final res = await _api.toggleAvailability(token!);
     togglingAvailability.value = false;

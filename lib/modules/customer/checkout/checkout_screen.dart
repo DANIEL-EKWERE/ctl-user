@@ -27,7 +27,8 @@ class _CheckoutState extends State<CheckoutScreen> {
 
   late int vendorId;
   late String vendorName;
-  String payMethod = 'wallet';
+  String payMethod = 'wallet'; // wallet | card (online via [gateway])
+  String gateway = 'paystack'; // monnify | paystack | flutterwave
   bool loading = false;
   bool addrLoading = false;
   String? error;
@@ -153,9 +154,9 @@ class _CheckoutState extends State<CheckoutScreen> {
     }
   }
 
-  /// Card checkout: create the order (`customer/orders`, payment_method
-  /// paystack), initiate its payment via `payments/order` with the order_id,
-  /// complete it in the Paystack WebView, then verify the reference.
+  /// Online checkout: create the order (`customer/orders`, payment_method =
+  /// selected gateway), initiate its payment via `payments/order` with the
+  /// order_id, complete it in the gateway WebView, then verify the reference.
   Future<void> _payWithCard() async {
     setState(() {
       loading = true;
@@ -173,10 +174,10 @@ class _CheckoutState extends State<CheckoutScreen> {
     // payment doesn't create duplicate orders.
     var orderId = _cardOrderId;
     if (orderId == null) {
-      // The API rejects 'card'; card orders are tagged with the gateway.
+      // The API rejects 'card'; online orders are tagged with the gateway.
       final orderRes = await ApiClient.instance.placeOrder({
         ...payload,
-        'payment_method': 'paystack',
+        'payment_method': gateway,
       }, auth.customerToken!);
       if (orderRes['success'] != true) {
         setState(() {
@@ -205,7 +206,7 @@ class _CheckoutState extends State<CheckoutScreen> {
       'order_id': orderId,
       'vendor_id': vendorId,
       'amount': total,
-      'gateway': 'paystack',
+      'gateway': gateway,
       'items': payload['items'],
       'delivery_address': payload['delivery_address'],
     }, auth.customerToken!);
@@ -218,8 +219,11 @@ class _CheckoutState extends State<CheckoutScreen> {
       return;
     }
 
-    final authUrl = AppUtils.findKey(res['data'], 'authorization_url');
-    final initRef = AppUtils.findKey(res['data'], 'reference');
+    final authUrl = AppUtils.paymentLink(res['data']);
+    final initRef =
+        AppUtils.findKey(res['data'], 'reference') ??
+        AppUtils.findKey(res['data'], 'paymentReference') ??
+        AppUtils.findKey(res['data'], 'tx_ref');
     if (authUrl == null) {
       setState(() {
         loading = false;
@@ -246,7 +250,11 @@ class _CheckoutState extends State<CheckoutScreen> {
 
     final params = Uri.tryParse(callbackUrl)?.queryParameters ?? {};
     final reference =
-        params['reference'] ?? params['trxref'] ?? initRef?.toString();
+        params['reference'] ?? // Paystack
+        params['trxref'] ??
+        params['paymentReference'] ?? // Monnify
+        params['tx_ref'] ?? // Flutterwave
+        initRef?.toString();
     if (reference == null) {
       setState(
         () => error =
@@ -671,9 +679,23 @@ class _CheckoutState extends State<CheckoutScreen> {
                   _payOpt(
                     'card',
                     Icons.credit_card_outlined,
-                    'Pay with Card',
-                    'Paystack online payment',
+                    'Pay Online',
+                    'Card, bank transfer or USSD',
                   ),
+                  if (payMethod == 'card')
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
+                      child: Column(
+                        children: [
+                          for (final g in PaymentGateway.all)
+                            GatewayOption(
+                              gateway: g,
+                              selected: gateway == g.value,
+                              onTap: () => setState(() => gateway = g.value),
+                            ),
+                        ],
+                      ),
+                    ),
                 ],
               ),
             ),

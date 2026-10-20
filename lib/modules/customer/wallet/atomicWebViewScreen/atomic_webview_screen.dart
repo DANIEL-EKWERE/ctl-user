@@ -117,18 +117,32 @@ class _AtomicWebViewScreenState extends State<AtomicWebViewScreen> {
 
               final urlStr = url?.toString() ?? '';
 
-              // Paystack cancelled — close webview and show message
-              if (urlStr.contains('paystack') &&
-                  (urlStr.contains('cancel') || urlStr.contains('close'))) {
+              final isCallback =
+                  urlStr.startsWith(callback_url) ||
+                  urlStr.startsWith(callback_url2) ||
+                  urlStr.startsWith(callback_url3);
+              final gatewayPage = ['paystack', 'monnify', 'flutterwave']
+                  .any(urlStr.contains);
+              final payStatus =
+                  (url?.queryParameters['status'] ?? '').toLowerCase();
+
+              // Cancelled on the gateway page, or redirected back with a
+              // cancelled/failed status (Flutterwave does this).
+              if ((gatewayPage &&
+                      !isCallback &&
+                      (urlStr.contains('cancel') || urlStr.contains('close'))) ||
+                  (isCallback &&
+                      (payStatus == 'cancelled' || payStatus == 'failed'))) {
                 if (Navigator.of(context).canPop()) Navigator.pop(context);
-                showToast('Payment cancelled.');
+                showToast(
+                  payStatus == 'failed' ? 'Payment failed.' : 'Payment cancelled.',
+                  isError: payStatus == 'failed',
+                );
                 return;
               }
 
               // Gateway redirected back to our callback
-              if (urlStr.startsWith(callback_url) ||
-                  urlStr.startsWith(callback_url2) ||
-                  urlStr.startsWith(callback_url3)) {
+              if (isCallback) {
                 if (widget.isOrderPayment) {
                   if (Navigator.of(context).canPop()) {
                     Navigator.pop(context, urlStr);

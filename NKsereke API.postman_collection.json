@@ -1,54 +1,30 @@
 {
   "info": {
+    "_postman_id": "972b336b-1eda-4155-b474-006a1dfc1f50",
     "name": "NKsereke API",
     "description": "Complete API documentation for NKsereke delivery platform.\n\nBase URL: https://nksereke.elianaeliohotels.com/api\n\nAuthentication: Bearer token (set {{token}} variable after login)\n\nTest credentials:\n- Customer: adewale.ogunleye@gmail.com / password\n- Rider: taiwo.oduya@rider.com / password",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_postman_id": "nksereke-api-v1"
-  },
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "https://nksereke.elianaeliohotels.com/api",
-      "type": "string"
-    },
-    {
-      "key": "token",
-      "value": "",
-      "type": "string"
-    },
-    {
-      "key": "vendor_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "order_id",
-      "value": "1",
-      "type": "string"
-    },
-    {
-      "key": "address_id",
-      "value": "1",
-      "type": "string"
-    }
-  ],
-  "auth": {
-    "type": "bearer",
-    "bearer": [
-      {
-        "key": "token",
-        "value": "{{token}}",
-        "type": "string"
-      }
-    ]
+    "_exporter_id": "23714504",
+    "_collection_link": "https://go.postman.co/collection/23714504-972b336b-1eda-4155-b474-006a1dfc1f50?source=collection_link"
   },
   "item": [
     {
-      "name": "\ud83d\udd10 Auth",
-      "description": "Authentication \u2014 register, login, verify email, forgot password",
+      "name": "🔐 Auth",
       "item": [
         {
           "name": "Register Customer",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
+                  "pm.test('Has user_id', () => pm.expect(pm.response.json()).to.have.property('user_id'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -61,6 +37,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emeka Okafor\",\n  \"email\": \"emeka@example.com\",\n  \"phone\": \"08012345678\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"customer\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/register",
               "host": [
@@ -71,30 +56,9 @@
                 "register"
               ]
             },
-            "description": "Register a new customer account. Returns user_id for OTP verification.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Emeka Okafor\",\n  \"email\": \"emeka@example.com\",\n  \"phone\": \"08012345678\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"customer\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Register a new customer account. Returns user_id for OTP verification."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 201', () => pm.response.to.have.status(201));",
-                  "pm.test('Has user_id', () => pm.expect(pm.response.json()).to.have.property('user_id'));"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Register Rider",
@@ -110,6 +74,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Taiwo Rider\",\n  \"email\": \"taiwo@example.com\",\n  \"phone\": \"08099999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"rider\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/register",
               "host": [
@@ -120,55 +93,12 @@
                 "register"
               ]
             },
-            "description": "Register a new rider account.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Taiwo Rider\",\n  \"email\": \"taiwo@example.com\",\n  \"phone\": \"08099999999\",\n  \"password\": \"password123\",\n  \"password_confirmation\": \"password123\",\n  \"role\": \"rider\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Register a new rider account."
           },
           "response": []
         },
         {
           "name": "Verify Email (OTP)",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/auth/verify-email",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "verify-email"
-              ]
-            },
-            "description": "Verify email with 6-digit OTP. Returns token on success.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": 1,\n  \"otp\": \"123456\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -179,10 +109,7 @@
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Resend OTP",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -195,6 +122,55 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"otp\": \"123456\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/verify-email",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "verify-email"
+              ]
+            },
+            "description": "Verify email with 6-digit OTP. Returns token on success."
+          },
+          "response": []
+        },
+        {
+          "name": "Resend OTP",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": 1,\n  \"email\": \"emeka@example.com\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/resend-otp",
               "host": [
@@ -205,24 +181,26 @@
                 "resend-otp"
               ]
             },
-            "description": "Resend verification OTP",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"user_id\": 1,\n  \"email\": \"emeka@example.com\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            },
-            "auth": {
-              "type": "noauth"
-            }
+            "description": "Resend verification OTP"
           },
           "response": []
         },
         {
           "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
+                  "pm.test('Save token', () => { const d = pm.response.json(); pm.expect(d).to.have.property('token'); pm.environment.set('token', d.token); pm.environment.set('user_role', d.user.role); });"
+                ],
+                "type": "text/javascript",
+                "packages": {},
+                "requests": {}
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -235,6 +213,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"adewale.ogunleye@gmail.com\",\n  \"password\": \"password\",\n  \"user_agent\": \"\",\n  \"platform\": \"\",\n  \"latitude\": \"\",\n  \"longitude\": \"\",\n  \"token\": \"\",\n  \"ip_address\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/login",
               "host": [
@@ -245,30 +232,9 @@
                 "login"
               ]
             },
-            "description": "Login and get auth token. Saves token to environment variable.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"email\": \"adewale.ogunleye@gmail.com\",\n  \"password\": \"password\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Login and get auth token. Saves token to environment variable."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Status 200', () => pm.response.to.have.status(200));",
-                  "pm.test('Save token', () => { const d = pm.response.json(); pm.expect(d).to.have.property('token'); pm.environment.set('token', d.token); pm.environment.set('user_role', d.user.role); });"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Get Profile",
@@ -312,6 +278,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Emeka Okafor Updated\",\n  \"phone\": \"08011111111\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/profile",
               "host": [
@@ -322,16 +297,7 @@
                 "profile"
               ]
             },
-            "description": "Update user profile",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"name\": \"Emeka Okafor Updated\",\n  \"phone\": \"08011111111\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "Update user profile"
           },
           "response": []
         },
@@ -349,6 +315,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"old_password\": \"password\",\n  \"new_password\": \"newpass123\",\n  \"new_password_confirmation\": \"newpass123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/change-password",
               "host": [
@@ -358,16 +333,6 @@
                 "auth",
                 "change-password"
               ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"old_password\": \"password\",\n  \"new_password\": \"newpass123\",\n  \"new_password_confirmation\": \"newpass123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -386,6 +351,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pin\": \"1234\",\n  \"pin_confirmation\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/auth/set-pin",
               "host": [
@@ -395,16 +369,6 @@
                 "auth",
                 "set-pin"
               ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"pin\": \"1234\",\n  \"pin_confirmation\": \"1234\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -412,6 +376,9 @@
         {
           "name": "Forgot Password",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -423,17 +390,6 @@
                 "value": "application/json"
               }
             ],
-            "url": {
-              "raw": "{{base_url}}/auth/forgot-password",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "forgot-password"
-              ]
-            },
-            "description": "",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"emeka@example.com\"\n}",
@@ -443,8 +399,15 @@
                 }
               }
             },
-            "auth": {
-              "type": "noauth"
+            "url": {
+              "raw": "{{base_url}}/auth/forgot-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "forgot-password"
+              ]
             }
           },
           "response": []
@@ -452,6 +415,9 @@
         {
           "name": "Verify Reset Code",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -463,17 +429,6 @@
                 "value": "application/json"
               }
             ],
-            "url": {
-              "raw": "{{base_url}}/auth/verify-reset-code",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "verify-reset-code"
-              ]
-            },
-            "description": "",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"emeka@example.com\",\n  \"code\": \"123456\"\n}",
@@ -483,8 +438,15 @@
                 }
               }
             },
-            "auth": {
-              "type": "noauth"
+            "url": {
+              "raw": "{{base_url}}/auth/verify-reset-code",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "verify-reset-code"
+              ]
             }
           },
           "response": []
@@ -492,6 +454,9 @@
         {
           "name": "Reset Password",
           "request": {
+            "auth": {
+              "type": "noauth"
+            },
             "method": "POST",
             "header": [
               {
@@ -503,17 +468,6 @@
                 "value": "application/json"
               }
             ],
-            "url": {
-              "raw": "{{base_url}}/auth/reset-password",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "auth",
-                "reset-password"
-              ]
-            },
-            "description": "",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"email\": \"emeka@example.com\",\n  \"code\": \"123456\",\n  \"password\": \"newpass123\",\n  \"password_confirmation\": \"newpass123\"\n}",
@@ -523,8 +477,15 @@
                 }
               }
             },
-            "auth": {
-              "type": "noauth"
+            "url": {
+              "raw": "{{base_url}}/auth/reset-password",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "auth",
+                "reset-password"
+              ]
             }
           },
           "response": []
@@ -557,14 +518,25 @@
           },
           "response": []
         }
-      ]
+      ],
+      "description": "Authentication — register, login, verify email, forgot password"
     },
     {
-      "name": "\ud83c\udfea Browse (Public)",
-      "description": "Public endpoints \u2014 categories, vendors, products",
+      "name": "🏪 Browse (Public)",
       "item": [
         {
           "name": "Get Categories",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Has categories', () => { const d = pm.response.json(); pm.expect(d).to.have.property('categories'); pm.expect(d.categories).to.be.an('array'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -589,21 +561,21 @@
             },
             "description": "Get all vendor categories"
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Vendors (Nearby)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Has categories', () => { const d = pm.response.json(); pm.expect(d).to.have.property('categories'); pm.expect(d.categories).to.be.an('array'); });"
+                  "pm.test('Has data', () => pm.expect(pm.response.json()).to.have.property('data'));"
                 ],
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Get Vendors (Nearby)",
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -655,21 +627,21 @@
             },
             "description": "Get vendors near a location. Use lat/lng for nearby results."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Vendor Detail",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Has data', () => pm.expect(pm.response.json()).to.have.property('data'));"
+                  "pm.test('Has vendor', () => { const d = pm.response.json(); pm.expect(d).to.have.property('vendor'); pm.expect(d.vendor).to.have.property('review_stats'); });"
                 ],
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Get Vendor Detail",
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -707,21 +679,21 @@
             },
             "description": "Get vendor detail with fresh rating from reviews table. Includes review_stats inline."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Vendor Products",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Has vendor', () => { const d = pm.response.json(); pm.expect(d).to.have.property('vendor'); pm.expect(d.vendor).to.have.property('review_stats'); });"
+                  "pm.test('Has data', () => pm.expect(pm.response.json().data).to.be.an('array'));"
                 ],
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Get Vendor Products",
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -760,21 +732,21 @@
             },
             "description": "Get products for a specific vendor. All products include vendor_id field."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Vendor Reviews",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Has data', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                  "pm.test('Has stats', () => pm.expect(pm.response.json()).to.have.property('stats'));"
                 ],
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Get Vendor Reviews",
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -801,21 +773,21 @@
             },
             "description": "Get public reviews for a vendor with stats (average, total, distribution)."
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Get Checkout Config",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "pm.test('Has stats', () => pm.expect(pm.response.json()).to.have.property('stats'));"
+                  "pm.test('Has config', () => { const d = pm.response.json(); pm.expect(d).to.have.property('service_charge_pct'); pm.expect(d).to.have.property('delivery_fee_bands'); });"
                 ],
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Get Checkout Config",
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -840,18 +812,7 @@
             },
             "description": "Get delivery fee bands and service charge % from admin settings."
           },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Has config', () => { const d = pm.response.json(); pm.expect(d).to.have.property('service_charge_pct'); pm.expect(d).to.have.property('delivery_fee_bands'); });"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
+          "response": []
         },
         {
           "name": "Get Advertisements",
@@ -881,18 +842,28 @@
           },
           "response": []
         }
-      ]
+      ],
+      "description": "Public endpoints — categories, vendors, products"
     },
     {
-      "name": "\ud83d\udc64 Customer",
-      "description": "Customer-specific endpoints (requires customer token)",
+      "name": "👤 Customer",
       "item": [
         {
-          "name": "\ud83d\udccd Addresses",
-          "description": "Delivery address management",
+          "name": "📍 Addresses",
           "item": [
             {
               "name": "List Addresses",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Has addresses', () => pm.expect(pm.response.json()).to.have.property('addresses'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
                 "header": [
@@ -917,18 +888,7 @@
                 },
                 "description": "List all saved delivery addresses"
               },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test('Has addresses', () => pm.expect(pm.response.json()).to.have.property('addresses'));"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ]
+              "response": []
             },
             {
               "name": "Add Address",
@@ -944,6 +904,15 @@
                     "value": "application/json"
                   }
                 ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"Home\",\n  \"address\": \"45 Allen Avenue, Ikeja\",\n  \"city\": \"Ikeja\",\n  \"state\": \"Lagos\",\n  \"latitude\": 6.6018,\n  \"longitude\": 3.3515,\n  \"is_default\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/customer/addresses",
                   "host": [
@@ -954,16 +923,7 @@
                     "addresses"
                   ]
                 },
-                "description": "Add a new delivery address",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"label\": \"Home\",\n  \"address\": \"45 Allen Avenue, Ikeja\",\n  \"city\": \"Ikeja\",\n  \"state\": \"Lagos\",\n  \"latitude\": 6.6018,\n  \"longitude\": 3.3515,\n  \"is_default\": true\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
+                "description": "Add a new delivery address"
               },
               "response": []
             },
@@ -981,6 +941,15 @@
                     "value": "application/json"
                   }
                 ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"label\": \"Work\",\n  \"address\": \"10 Victoria Island, Lagos\",\n  \"is_default\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/customer/addresses/{{address_id}}",
                   "host": [
@@ -991,16 +960,6 @@
                     "addresses",
                     "{{address_id}}"
                   ]
-                },
-                "description": "",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"label\": \"Work\",\n  \"address\": \"10 Victoria Island, Lagos\",\n  \"is_default\": false\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 }
               },
               "response": []
@@ -1029,15 +988,14 @@
                     "addresses",
                     "{{address_id}}"
                   ]
-                },
-                "description": ""
+                }
               },
               "response": []
             },
             {
               "name": "Set Default Address",
               "request": {
-                "method": "POST",
+                "method": "PATCH",
                 "header": [
                   {
                     "key": "Accept",
@@ -1059,19 +1017,29 @@
                     "{{address_id}}",
                     "set-default"
                   ]
-                },
-                "description": ""
+                }
               },
               "response": []
             }
-          ]
+          ],
+          "description": "Delivery address management"
         },
         {
-          "name": "\ud83d\udce6 Orders",
-          "description": "Order placement and tracking",
+          "name": "📦 Orders",
           "item": [
             {
               "name": "List Orders",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Has orders', () => pm.expect(pm.response.json()).to.have.property('data'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
                 "header": [
@@ -1108,21 +1076,21 @@
                 },
                 "description": "List all customer orders"
               },
-              "response": [],
+              "response": []
+            },
+            {
+              "name": "Get Order Detail",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test('Has orders', () => pm.expect(pm.response.json()).to.have.property('data'));"
+                      "pm.test('Has order', () => { const d = pm.response.json(); pm.expect(d).to.have.property('order'); pm.expect(d.order).to.have.property('items'); });"
                     ],
                     "type": "text/javascript"
                   }
                 }
-              ]
-            },
-            {
-              "name": "Get Order Detail",
+              ],
               "request": {
                 "method": "GET",
                 "header": [
@@ -1148,21 +1116,22 @@
                 },
                 "description": "Get full order detail with items, tracking, rider info"
               },
-              "response": [],
+              "response": []
+            },
+            {
+              "name": "Place Order (Wallet)",
               "event": [
                 {
                   "listen": "test",
                   "script": {
                     "exec": [
-                      "pm.test('Has order', () => { const d = pm.response.json(); pm.expect(d).to.have.property('order'); pm.expect(d.order).to.have.property('items'); });"
+                      "pm.test('Order created', () => pm.response.to.have.status(201));",
+                      "pm.test('Has reference', () => pm.expect(pm.response.json().order).to.have.property('reference'));"
                     ],
                     "type": "text/javascript"
                   }
                 }
-              ]
-            },
-            {
-              "name": "Place Order (Wallet)",
+              ],
               "request": {
                 "method": "POST",
                 "header": [
@@ -1175,6 +1144,15 @@
                     "value": "application/json"
                   }
                 ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"vendor_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    },\n    {\n      \"product_id\": 3,\n      \"quantity\": 1\n    }\n  ],\n  \"delivery_address\": \"45 Allen Avenue, Ikeja\",\n  \"delivery_latitude\": 6.6018,\n  \"delivery_longitude\": 3.3515,\n  \"payment_method\": \"wallet\",\n  \"pin\": \"1234\",\n  \"distance_km\": 3.5,\n  \"notes\": \"Please ring the bell\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/customer/orders",
                   "host": [
@@ -1185,18 +1163,12 @@
                     "orders"
                   ]
                 },
-                "description": "Place an order. payment_method: wallet requires PIN. For card payments use /payments/order first.",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"vendor_id\": 1,\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    },\n    {\n      \"product_id\": 3,\n      \"quantity\": 1\n    }\n  ],\n  \"delivery_address\": \"45 Allen Avenue, Ikeja\",\n  \"delivery_latitude\": 6.6018,\n  \"delivery_longitude\": 3.3515,\n  \"payment_method\": \"wallet\",\n  \"pin\": \"1234\",\n  \"distance_km\": 3.5,\n  \"notes\": \"Please ring the bell\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
+                "description": "Place an order. payment_method: wallet requires PIN. For card payments use /payments/order first."
               },
-              "response": [],
+              "response": []
+            },
+            {
+              "name": "Report Abuse",
               "event": [
                 {
                   "listen": "test",
@@ -1205,10 +1177,53 @@
                       "pm.test('Order created', () => pm.response.to.have.status(201));",
                       "pm.test('Has reference', () => pm.expect(pm.response.json().order).to.have.property('reference'));"
                     ],
-                    "type": "text/javascript"
+                    "type": "text/javascript",
+                    "packages": {},
+                    "requests": {}
                   }
                 }
-              ]
+              ],
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"abuse_type\": \"tampered\", //\"tampered|not_delivered|wrong_item|rude_behavior|fraud|other\"\n  \"description\": \"My food was openned\", // \"What happened (min 20 chars)\",\n  \"reported_user_id\": 158 // optional — rider or vendor user ID\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/orders/:order/report-abuse",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "orders",
+                    ":order",
+                    "report-abuse"
+                  ],
+                  "variable": [
+                    {
+                      "key": "order",
+                      "value": "127"
+                    }
+                  ]
+                },
+                "description": "Place an order. payment_method: wallet requires PIN. For card payments use /payments/order first."
+              },
+              "response": []
             },
             {
               "name": "Cancel Order",
@@ -1224,6 +1239,15 @@
                     "value": "application/json"
                   }
                 ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/customer/orders/{{order_id}}/cancel",
                   "host": [
@@ -1235,16 +1259,6 @@
                     "{{order_id}}",
                     "cancel"
                   ]
-                },
-                "description": "",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"reason\": \"Changed my mind\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
                 }
               },
               "response": []
@@ -1263,19 +1277,6 @@
                     "value": "application/json"
                   }
                 ],
-                "url": {
-                  "raw": "{{base_url}}/customer/orders/{{order_id}}/review",
-                  "host": [
-                    "{{base_url}}"
-                  ],
-                  "path": [
-                    "customer",
-                    "orders",
-                    "{{order_id}}",
-                    "review"
-                  ]
-                },
-                "description": "Write a review after delivery (status must be 'delivered')",
                 "body": {
                   "mode": "raw",
                   "raw": "{\n  \"rating\": 5,\n  \"review\": \"Excellent food, fast delivery!\"\n}",
@@ -1284,18 +1285,42 @@
                       "language": "json"
                     }
                   }
-                }
+                },
+                "url": {
+                  "raw": "{{base_url}}/customer/vendors/{{vendor_id}}/review",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "customer",
+                    "vendors",
+                    "{{vendor_id}}",
+                    "review"
+                  ]
+                },
+                "description": "Write a review after delivery (status must be 'delivered')"
               },
               "response": []
             }
-          ]
+          ],
+          "description": "Order placement and tracking"
         },
         {
-          "name": "\ud83d\udcb0 Wallet",
-          "description": "Customer wallet balance and transactions",
+          "name": "💰 Wallet",
           "item": [
             {
               "name": "Wallet Balance",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Has balance', () => pm.expect(pm.response.json()).to.have.property('balance'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
                 "header": [
@@ -1318,21 +1343,9 @@
                     "wallet",
                     "balance"
                   ]
-                },
-                "description": ""
-              },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test('Has balance', () => pm.expect(pm.response.json()).to.have.property('balance'));"
-                    ],
-                    "type": "text/javascript"
-                  }
                 }
-              ]
+              },
+              "response": []
             },
             {
               "name": "Wallet Transactions",
@@ -1370,55 +1383,21 @@
                       "description": "Per page"
                     }
                   ]
-                },
-                "description": ""
+                }
               },
               "response": []
             }
-          ]
+          ],
+          "description": "Customer wallet balance and transactions"
         }
-      ]
+      ],
+      "description": "Customer-specific endpoints (requires customer token)"
     },
     {
-      "name": "\ud83d\udcb3 Payments",
-      "description": "Payment gateway integration (Paystack / Flutterwave)",
+      "name": "💳 Payments",
       "item": [
         {
           "name": "Initiate Order Payment",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/payments/order",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "payments",
-                "order"
-              ]
-            },
-            "description": "Initiate card payment for an order. Returns authorization_url to open in WebView.\ngateway: paystack | flutterwave",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"vendor_id\": 1,\n  \"amount\": 3865,\n  \"gateway\": \"paystack\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    }\n  ],\n  \"delivery_address\": \"45 Allen Avenue, Ikeja\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": [],
           "event": [
             {
               "listen": "test",
@@ -1429,10 +1408,7 @@
                 "type": "text/javascript"
               }
             }
-          ]
-        },
-        {
-          "name": "Fund Wallet",
+          ],
           "request": {
             "method": "POST",
             "header": [
@@ -1445,28 +1421,31 @@
                 "value": "application/json"
               }
             ],
-            "url": {
-              "raw": "{{base_url}}/payments/fund-wallet",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "payments",
-                "fund-wallet"
-              ]
-            },
-            "description": "Generate payment link to fund customer wallet",
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"amount\": 5000,\n  \"gateway\": \"paystack\"\n}",
+              "raw": "{\n  \"vendor_id\": 1,\n  \"amount\": 3865,\n  \"gateway\": \"paystack\",\n  \"items\": [\n    {\n      \"product_id\": 1,\n      \"quantity\": 2\n    }\n  ],\n  \"delivery_address\": \"45 Allen Avenue, Ikeja\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
                 }
               }
-            }
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/order",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "order"
+              ]
+            },
+            "description": "Initiate card payment for an order. Returns authorization_url to open in WebView.\ngateway: paystack | flutterwave"
           },
-          "response": [],
+          "response": []
+        },
+        {
+          "name": "Fund Wallet",
           "event": [
             {
               "listen": "test",
@@ -1477,7 +1456,41 @@
                 "type": "text/javascript"
               }
             }
-          ]
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"gateway\": \"paystack\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/payments/fund-wallet",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "payments",
+                "fund-wallet"
+              ]
+            },
+            "description": "Generate payment link to fund customer wallet"
+          },
+          "response": []
         },
         {
           "name": "Verify Payment",
@@ -1550,6 +1563,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"bank_code\": \"044\",\n  \"account_number\": \"0123456789\",\n  \"account_name\": \"Taiwo Rider\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/payments/bank-accounts",
               "host": [
@@ -1559,16 +1581,6 @@
                 "payments",
                 "bank-accounts"
               ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"bank_code\": \"044\",\n  \"account_number\": \"0123456789\",\n  \"account_name\": \"Taiwo Rider\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
@@ -1596,8 +1608,7 @@
                 "payments",
                 "bank-accounts"
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
@@ -1615,6 +1626,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": 5000,\n  \"bank_account_id\": 1,\n  \"pin\": \"1234\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/payments/withdraw",
               "host": [
@@ -1624,28 +1644,29 @@
                 "payments",
                 "withdraw"
               ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"amount\": 5000,\n  \"bank_account_id\": 1,\n  \"pin\": \"1234\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         }
-      ]
+      ],
+      "description": "Payment gateway integration (Paystack / Flutterwave)"
     },
     {
-      "name": "\ud83d\udd14 Notifications",
-      "description": "In-app notifications",
+      "name": "🔔 Notifications",
       "item": [
         {
           "name": "List Notifications",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Has notifications', () => pm.expect(pm.response.json()).to.have.property('data'));"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
           "request": {
             "method": "GET",
             "header": [
@@ -1666,21 +1687,9 @@
               "path": [
                 "notifications"
               ]
-            },
-            "description": ""
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Has notifications', () => pm.expect(pm.response.json()).to.have.property('data'));"
-                ],
-                "type": "text/javascript"
-              }
             }
-          ]
+          },
+          "response": []
         },
         {
           "name": "Mark All Read",
@@ -1705,8 +1714,7 @@
                 "notifications",
                 "read-all"
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
@@ -1724,6 +1732,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"FIREBASE_FCM_TOKEN\",\n  \"platform\": \"android\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/notifications/token",
               "host": [
@@ -1733,29 +1750,29 @@
                 "notifications",
                 "token"
               ]
-            },
-            "description": "",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"token\": \"FIREBASE_FCM_TOKEN\",\n  \"platform\": \"android\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
             }
           },
           "response": []
         }
-      ]
+      ],
+      "description": "In-app notifications"
     },
     {
-      "name": "\ud83d\udcac Support",
-      "description": "Customer support tickets",
+      "name": "💬 Support",
       "item": [
         {
           "name": "Create Ticket",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "POST",
             "header": [
               {
@@ -1767,6 +1784,15 @@
                 "value": "application/json"
               }
             ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": \"Order not delivered\",\n  \"message\": \"My order #NK001 was not delivered\",\n  \"category\": \"order\",\n  \"priority\": \"high\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
             "url": {
               "raw": "{{base_url}}/support/tickets",
               "host": [
@@ -1777,22 +1803,23 @@
                 "tickets"
               ]
             },
-            "description": "category: general | order | payment | account | technical",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"subject\": \"Order not delivered\",\n  \"message\": \"My order #NK001 was not delivered\",\n  \"category\": \"order\",\n  \"priority\": \"high\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
+            "description": "category: general | order | payment | account | technical"
           },
           "response": []
         },
         {
           "name": "List Tickets",
           "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
             "method": "GET",
             "header": [
               {
@@ -1813,8 +1840,7 @@
                 "support",
                 "tickets"
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
@@ -1833,17 +1859,22 @@
               }
             ],
             "url": {
-              "raw": "{{base_url}}/support/tickets/1",
+              "raw": "{{base_url}}/support/tickets/:ticket_id",
               "host": [
                 "{{base_url}}"
               ],
               "path": [
                 "support",
                 "tickets",
-                "1"
+                ":ticket_id"
+              ],
+              "variable": [
+                {
+                  "key": "ticket_id",
+                  "value": "1"
+                }
               ]
-            },
-            "description": ""
+            }
           },
           "response": []
         },
@@ -1861,19 +1892,6 @@
                 "value": "application/json"
               }
             ],
-            "url": {
-              "raw": "{{base_url}}/support/tickets/1/reply",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "support",
-                "tickets",
-                "1",
-                "reply"
-              ]
-            },
-            "description": "",
             "body": {
               "mode": "raw",
               "raw": "{\n  \"message\": \"Please check again\"\n}",
@@ -1882,126 +1900,44 @@
                   "language": "json"
                 }
               }
+            },
+            "url": {
+              "raw": "{{base_url}}/support/ticket/1/reply",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "support",
+                "ticket",
+                "1",
+                "reply"
+              ]
             }
           },
           "response": []
         }
-      ]
+      ],
+      "description": "Customer support tickets"
     },
     {
-      "name": "\ud83c\udfcd\ufe0f Rider",
-      "description": "Rider-specific endpoints (requires rider token)",
+      "name": "🏍️ Rider",
       "item": [
         {
-          "name": "Dashboard",
-          "request": {
-            "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/rider/dashboard",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "rider",
-                "dashboard"
-              ]
-            },
-            "description": "Get rider dashboard: earnings, delivery stats, availability, approval status"
-          },
-          "response": [],
-          "event": [
-            {
-              "listen": "test",
-              "script": {
-                "exec": [
-                  "pm.test('Has dashboard', () => { const d = pm.response.json(); pm.expect(d).to.have.property('wallet_balance'); pm.expect(d).to.have.property('is_available'); });"
-                ],
-                "type": "text/javascript"
-              }
-            }
-          ]
-        },
-        {
-          "name": "Toggle Availability",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/rider/toggle-availability",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "rider",
-                "toggle-availability"
-              ]
-            },
-            "description": "Toggle rider online/offline status"
-          },
-          "response": []
-        },
-        {
-          "name": "Update Location",
-          "request": {
-            "method": "POST",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json"
-              },
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
-            "url": {
-              "raw": "{{base_url}}/rider/location",
-              "host": [
-                "{{base_url}}"
-              ],
-              "path": [
-                "rider",
-                "location"
-              ]
-            },
-            "description": "Update rider GPS location. Call every 60 seconds while active.",
-            "body": {
-              "mode": "raw",
-              "raw": "{\n  \"latitude\": 6.5244,\n  \"longitude\": 3.3792,\n  \"city\": \"Ikeja\",\n  \"state\": \"Lagos\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
-            }
-          },
-          "response": []
-        },
-        {
-          "name": "\ud83d\udccb Orders",
-          "description": "Rider order management",
+          "name": "📋 Orders",
           "item": [
             {
               "name": "Available Orders",
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "exec": [
+                      "pm.test('Has orders', () => pm.expect(pm.response.json().data).to.be.an('array'));"
+                    ],
+                    "type": "text/javascript"
+                  }
+                }
+              ],
               "request": {
                 "method": "GET",
                 "header": [
@@ -2034,18 +1970,7 @@
                 },
                 "description": "Get orders available for pickup in rider's area"
               },
-              "response": [],
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "exec": [
-                      "pm.test('Has orders', () => pm.expect(pm.response.json().data).to.be.an('array'));"
-                    ],
-                    "type": "text/javascript"
-                  }
-                }
-              ]
+              "response": []
             },
             {
               "name": "Accept Order",
@@ -2091,6 +2016,15 @@
                     "value": "application/json"
                   }
                 ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"reason\": \"Too far\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
                 "url": {
                   "raw": "{{base_url}}/rider/orders/1/reject",
                   "host": [
@@ -2103,16 +2037,7 @@
                     "reject"
                   ]
                 },
-                "description": "Reject an available order",
-                "body": {
-                  "mode": "raw",
-                  "raw": "{\n  \"reason\": \"Too far\"\n}",
-                  "options": {
-                    "raw": {
-                      "language": "json"
-                    }
-                  }
-                }
+                "description": "Reject an available order"
               },
               "response": []
             },
@@ -2181,16 +2106,15 @@
                       "description": "Page"
                     }
                   ]
-                },
-                "description": ""
+                }
               },
               "response": []
             }
-          ]
+          ],
+          "description": "Rider order management"
         },
         {
-          "name": "\ud83d\udcb0 Wallet",
-          "description": "Rider earnings wallet",
+          "name": "💰 Wallet",
           "item": [
             {
               "name": "Wallet Balance",
@@ -2216,8 +2140,7 @@
                     "wallet",
                     "balance"
                   ]
-                },
-                "description": ""
+                }
               },
               "response": []
             },
@@ -2245,14 +2168,449 @@
                     "wallet",
                     "transactions"
                   ]
+                }
+              },
+              "response": []
+            }
+          ],
+          "description": "Rider earnings wallet"
+        },
+        {
+          "name": "Onboarding",
+          "item": [
+            {
+              "name": "Status",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
                 },
-                "description": ""
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{base_url}}/rider/onboarding/status",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "rider",
+                    "onboarding",
+                    "status"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step 1",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n    \"vehicle_type\": \"bike\", //\"bike\", \"tricycle\", \"car\"\n    \"plate_number\": \"\",\n    \"license_number\":\"\",\n    \"guarantor_name\":\"\",\n    \"guarantor_phone\":\"\",\n    \"home_address\":\"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": {
+                  "raw": "{{base_url}}/rider/onboarding/step-1",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "rider",
+                    "onboarding",
+                    "step-1"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step 2",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "profile_photo",
+                      "type": "file",
+                      "uuid": "a3471c49-c336-47a1-bf4c-a4b4d3476082",
+                      "value": null
+                    },
+                    {
+                      "key": "means_of_id",
+                      "type": "file",
+                      "uuid": "036a11b5-dc49-4f54-b0e0-d3613bc50989",
+                      "value": null
+                    },
+                    {
+                      "key": "driver_licence",
+                      "type": "file",
+                      "uuid": "9d5ac083-0d23-455a-b705-a5129a816586",
+                      "value": null
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/rider/onboarding/step-2",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "rider",
+                    "onboarding",
+                    "step-2"
+                  ]
+                }
+              },
+              "response": []
+            },
+            {
+              "name": "Step 3",
+              "request": {
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "formdata",
+                  "formdata": [
+                    {
+                      "key": "guarantor_id",
+                      "type": "file",
+                      "uuid": "a3471c49-c336-47a1-bf4c-a4b4d3476082",
+                      "value": null
+                    }
+                  ]
+                },
+                "url": {
+                  "raw": "{{base_url}}/rider/onboarding/step-3",
+                  "host": [
+                    "{{base_url}}"
+                  ],
+                  "path": [
+                    "rider",
+                    "onboarding",
+                    "step-3"
+                  ]
+                }
               },
               "response": []
             }
           ]
+        },
+        {
+          "name": "Dashboard",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Has dashboard', () => { const d = pm.response.json(); pm.expect(d).to.have.property('wallet_balance'); pm.expect(d).to.have.property('is_available'); });"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rider/dashboard",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rider",
+                "dashboard"
+              ]
+            },
+            "description": "Get rider dashboard: earnings, delivery stats, availability, approval status"
+          },
+          "response": []
+        },
+        {
+          "name": "Toggle Availability",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rider/toggle-availability",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rider",
+                "toggle-availability"
+              ]
+            },
+            "description": "Toggle rider online/offline status"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"latitude\": 6.5244,\n  \"longitude\": 3.3792,\n  \"city\": \"Ikeja\",\n  \"state\": \"Lagos\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/rider/location",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rider",
+                "location"
+              ]
+            },
+            "description": "Update rider GPS location. Call every 60 seconds while active."
+          },
+          "response": []
+        },
+        {
+          "name": "Profile",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rider/profile",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rider",
+                "profile"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Info",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/rider/info",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "rider",
+                "info"
+              ]
+            }
+          },
+          "response": []
         }
-      ]
+      ],
+      "description": "Rider-specific endpoints (requires rider token)"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://nksereke.elianaeliohotels.com/api"
+    },
+    {
+      "key": "token",
+      "value": ""
+    },
+    {
+      "key": "vendor_id",
+      "value": "1"
+    },
+    {
+      "key": "order_id",
+      "value": "1"
+    },
+    {
+      "key": "address_id",
+      "value": "1"
     }
   ]
 }

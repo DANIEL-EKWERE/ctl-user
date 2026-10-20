@@ -695,21 +695,28 @@ class ApiClient {
   Future<Map<String, dynamic>> getRiderInfo(String token) =>
       get('rider/info', token: token);
 
-  /// Submits rider onboarding details (vehicle, guarantor, address) and
-  /// document uploads via the update route (PUT rider/profile).
-  /// PHP can't read multipart bodies on a real PUT, so this is sent as POST
-  /// with Laravel's `_method=PUT` override. [files] maps document field
-  /// names to local paths.
-  Future<Map<String, dynamic>> submitRiderProfile(
-    Map<String, String> fields,
+  // ─── Rider onboarding (3 steps) ────────────────────────────────────────
+  Future<Map<String, dynamic>> getRiderOnboardingStatus(String token) =>
+      get('rider/onboarding/status', token: token);
+
+  /// Step 1: vehicle_type (bike|tricycle|car), plate_number, license_number,
+  /// guarantor_name, guarantor_phone, home_address.
+  Future<Map<String, dynamic>> riderOnboardingStep1(
+    Map<String, dynamic> data,
+    String token,
+  ) => post('rider/onboarding/step-1', token: token, body: data);
+
+  /// Step 2 files: profile_photo, means_of_id, driver_licence.
+  Future<Map<String, dynamic>> riderOnboardingStep2(
     Map<String, String> files,
     String token,
-  ) => postMultipart(
-    'rider/profile',
-    token: token,
-    fields: {...fields, '_method': 'PUT'},
-    files: files,
-  );
+  ) => postMultipart('rider/onboarding/step-2', token: token, files: files);
+
+  /// Step 3 file: guarantor_id.
+  Future<Map<String, dynamic>> riderOnboardingStep3(
+    Map<String, String> files,
+    String token,
+  ) => postMultipart('rider/onboarding/step-3', token: token, files: files);
 
   Future<Map<String, dynamic>> toggleAvailability(String token) =>
       post('rider/toggle-availability', token: token);

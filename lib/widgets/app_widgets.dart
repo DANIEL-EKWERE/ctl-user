@@ -488,3 +488,124 @@ class BankAccountMenu extends StatelessWidget {
     ],
   );
 }
+
+// ─── Payment Gateways ─────────────────────────────────────────────────────────
+/// Online payment gateways the user can choose from. [value] is what the API
+/// expects in the `gateway` field.
+class PaymentGateway {
+  final String value;
+  final String title;
+  final String subtitle;
+  final String? logoAsset; // falls back to an icon when null
+
+  const PaymentGateway(this.value, this.title, this.subtitle, [this.logoAsset]);
+
+  static const all = [
+    PaymentGateway('monnify', 'Monnify', 'Cards, Bank Transfer, USSD'),
+    PaymentGateway(
+      'paystack',
+      'Paystack',
+      'Cards, Bank Transfer, USSD',
+      'assets/images/paystack-logo-png_seeklogo-511548.webp',
+    ),
+    PaymentGateway(
+      'flutterwave',
+      'Flutterwave',
+      'Cards, Bank Transfer, USSD',
+      'assets/images/Flutterwave-Symbol-500x281.webp',
+    ),
+  ];
+}
+
+/// Selectable row for one [PaymentGateway].
+class GatewayOption extends StatelessWidget {
+  final PaymentGateway gateway;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const GatewayOption({
+    super.key,
+    required this.gateway,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    child: Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: selected ? AppColors.orange : AppColors.border,
+          width: 1.5,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 18,
+            height: 18,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: selected ? AppColors.orange : AppColors.border,
+                width: 2,
+              ),
+            ),
+            child: selected
+                ? Center(
+                    child: Container(
+                      width: 8,
+                      height: 8,
+                      decoration: const BoxDecoration(
+                        color: AppColors.orange,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+          const SizedBox(width: 12),
+          SizedBox(
+            width: 24,
+            height: 24,
+            child: gateway.logoAsset != null
+                ? Image.asset(gateway.logoAsset!, fit: BoxFit.contain)
+                : const Icon(
+                    Icons.account_balance_outlined,
+                    size: 20,
+                    color: AppColors.navy,
+                  ),
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  gateway.title,
+                  style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.navy,
+                  ),
+                ),
+                Text(
+                  gateway.subtitle,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}

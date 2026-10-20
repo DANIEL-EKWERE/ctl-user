@@ -5,7 +5,9 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
+import '../../core/utils/app_utils.dart';
 import '../../core/utils/toast.dart';
+import '../rider/onboarding/rider_gate.dart';
 import '../../data/models/models.dart';
 import '../../data/services/api_client.dart';
 import '../../data/services/storage_service.dart';
@@ -159,7 +161,7 @@ class AuthController extends GetxController {
       await _storage.setRiderToken(token);
       await _storage.setRiderUser(jsonEncode(body['user']));
       await _storage.setRole('rider');
-      Get.offAllNamed(AppRoutes.riderShell);
+      await routeRider();
     } else {
       customerToken = token;
       customerUser = user;
@@ -216,12 +218,14 @@ class AuthController extends GetxController {
         riderUser = user;
         await _storage.setRiderToken(token);
         await _storage.setRiderUser(jsonEncode(body['user']));
-        Get.offAllNamed(AppRoutes.riderShell);
+        await _storage.setRole('rider'); // so a cold start reopens rider flow
+        await routeRider();
       } else {
         customerToken = token;
         customerUser = user;
         await _storage.setCustomerToken(token);
         await _storage.setCustomerUser(jsonEncode(body['user']));
+        await _storage.setRole('customer');
         Get.offAllNamed(AppRoutes.customerShell);
       }
     }
@@ -295,6 +299,27 @@ class AuthController extends GetxController {
     if (updated == null) return;
     customerUser = updated;
     await _storage.setCustomerUser(jsonEncode(updated.toJson()));
+  }
+
+  /// Merges a `rider/onboarding/status` response (onboarding_step,
+  /// rider_status, rejection_reason, can_access_dashboard) into the stored
+  /// rider user and returns the updated user.
+  Future<AppUser?> applyRiderStatus(dynamic statusData) async {
+    final current = riderUser;
+    if (current == null) return null;
+    final json = current.toJson();
+    for (final key in const [
+      'onboarding_step',
+      'rider_status',
+      'rejection_reason',
+      'can_access_dashboard',
+    ]) {
+      final v = AppUtils.findKey(statusData, key);
+      if (v != null) json[key] = v;
+    }
+    riderUser = AppUser.fromJson(json);
+    await _storage.setRiderUser(jsonEncode(json));
+    return riderUser;
   }
 
   Future<void> updateRiderProfile(String name, String phone) async {

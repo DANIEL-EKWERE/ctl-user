@@ -9,7 +9,6 @@ import '../../../routes/app_routes.dart';
 import '../../../widgets/app_widgets.dart';
 import '../../auth/auth_controller.dart';
 import '../dashboard/rider_controller.dart';
-import '../onboarding/rider_onboarding_screen.dart';
 
 String _dateLabel(String? createdAt) {
   if (createdAt == null) return 'Earlier';
@@ -141,7 +140,6 @@ class RiderDashboardTab extends StatelessWidget {
             child: CustomScrollView(
               slivers: [
                 SliverToBoxAdapter(child: _DashHeader()),
-                const SliverToBoxAdapter(child: _OnboardingBanner()),
                 SliverToBoxAdapter(child: _AvailOrders()),
               ],
             ),
@@ -269,99 +267,6 @@ class _DashHeader extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// Tells a new rider what is blocking activation and links to the form.
-class _OnboardingBanner extends StatelessWidget {
-  const _OnboardingBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    final ctrl = RiderController.to;
-    return Obx(() {
-      if (ctrl.riderInfo.value == null) return const SizedBox.shrink();
-      final missing = ctrl.missingOnboardingItems;
-      final rejected = ctrl.approvalStatus == 'rejected';
-      if (missing.isEmpty && !ctrl.awaitingApproval) {
-        return const SizedBox.shrink();
-      }
-
-      final String title;
-      final String body;
-      final IconData icon;
-      final Color tint;
-      if (missing.isNotEmpty) {
-        title = 'Complete your rider profile';
-        body =
-            'Add the following to get approved and start delivering: '
-            '${missing.join(', ')}.';
-        icon = Icons.assignment_late_outlined;
-        tint = AppColors.orange;
-      } else if (rejected) {
-        title = 'Application not approved';
-        body =
-            'Please review and update your details, then resubmit. '
-            'Contact support if you need help.';
-        icon = Icons.error_outline;
-        tint = AppColors.red;
-      } else {
-        title = 'Awaiting approval';
-        body =
-            'Your details have been submitted and are under review. '
-            "We'll notify you once your account is approved — then you can go online.";
-        icon = Icons.hourglass_top_rounded;
-        tint = AppColors.navy;
-      }
-
-      return Container(
-        margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: tint.withValues(alpha: 0.5)),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(icon, color: tint, size: 20),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w700,
-                      color: AppColors.navy,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 6),
-            Text(
-              body,
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppColors.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            if (missing.isNotEmpty || rejected) ...[
-              const SizedBox(height: 12),
-              AppButton(
-                label: missing.isNotEmpty ? 'Complete Profile' : 'Update Details',
-                height: 42,
-                onTap: () => Get.to(() => const RiderOnboardingScreen()),
-              ),
-            ],
-          ],
-        ),
-      );
-    });
-  }
 }
 
 class _AvailOrders extends StatelessWidget {
@@ -1856,7 +1761,7 @@ class RiderAccountTab extends StatelessWidget {
                   ),
                   _t(
                     Icons.delivery_dining_outlined,
-                    'Vehicle, Guarantor & Documents',
+                    'Vehicle & Documents',
                     () => Get.to(() => const RiderVehicleInfoScreen()),
                   ),
                   _t(
@@ -2120,26 +2025,10 @@ class _RiderVehicleInfoState extends State<RiderVehicleInfoScreen> {
     }
   }
 
-  Future<void> _edit() async {
-    final updated = await Get.to(() => const RiderOnboardingScreen());
-    if (updated == true) _load();
-  }
-
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.bg,
     appBar: OrangeTopBar(title: 'Vehicle Info'),
-    bottomNavigationBar: _loading
-        ? null
-        : SafeArea(
-            minimum: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: AppButton(
-              label: _error != null
-                  ? 'Submit Details & Documents'
-                  : 'Update Details & Documents',
-              onTap: _edit,
-            ),
-          ),
     body: _loading
         ? const Center(child: CircularProgressIndicator())
         : _error != null
@@ -2174,10 +2063,10 @@ class _RiderVehicleInfoState extends State<RiderVehicleInfoScreen> {
                     ]),
                     const SizedBox(height: 14),
                     _section('Documents', [
-                      _docRow('Means of ID',       _rider!['documents']?['means_of_id']),
-                      _docRow('Driver\'s License', _rider!['documents']?['drivers_license']),
-                      _docRow('Vehicle Document',  _rider!['documents']?['vehicle_document']),
-                      _docRow('Guarantor Form',    _rider!['documents']?['guarantor_form']),
+                      _docRow('Profile Photo',     _doc('profile_photo')),
+                      _docRow('Means of ID',       _doc('means_of_id')),
+                      _docRow('Driver\'s Licence', _doc('driver_licence')),
+                      _docRow('Guarantor\'s ID',   _doc('guarantor_id')),
                     ]),
                     const SizedBox(height: 14),
                     _section('Account Status', [
@@ -2222,6 +2111,9 @@ class _RiderVehicleInfoState extends State<RiderVehicleInfoScreen> {
       ],
     ),
   );
+
+  /// Document URL from `documents.{key}` or a top-level `{key}` field.
+  dynamic _doc(String key) => _rider!['documents']?[key] ?? _rider![key];
 
   Widget _docRow(String label, dynamic value) {
     final uploaded = value != null;

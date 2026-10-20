@@ -38,6 +38,23 @@ class AppUtils {
     return double.tryParse(val.toString().replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0;
   }
 
+  /// Checkout URL from a payment-initiation response. Each gateway names it
+  /// differently (Paystack authorization_url, Monnify checkoutUrl,
+  /// Flutterwave link).
+  static String? paymentLink(dynamic data) {
+    for (final k in const [
+      'authorization_url',
+      'checkout_url',
+      'checkoutUrl',
+      'payment_url',
+      'link',
+    ]) {
+      final v = findKey(data, k);
+      if (v is String && v.startsWith('http')) return v;
+    }
+    return null;
+  }
+
   /// Finds the first value stored under [key] anywhere in a nested API
   /// response (the backend wraps payloads in varying levels of `data`).
   static dynamic findKey(dynamic node, String key) {

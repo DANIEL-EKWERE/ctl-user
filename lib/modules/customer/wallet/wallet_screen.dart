@@ -288,7 +288,11 @@ class _FundWalletState extends State<FundWalletScreen> {
     setState(() => loading = false);
     if (res['success'] == true) {
       // var checkoutModel = jsonDecode(res.body);
-      var url = res['data']['data']['data']['authorization_url'];
+      final url = AppUtils.paymentLink(res['data']);
+      if (url == null) {
+        showToast('Payment gateway did not return a payment link.', isError: true);
+        return;
+      }
       //myLog.log('Checkout URL: $url');
       Navigator.push(
         Get.context!,
@@ -385,18 +389,12 @@ class _FundWalletState extends State<FundWalletScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          _gwOpt(
-            'paystack',
-            ' Paystack',
-            'Cards, Bank Transfer, USSD',
-            'assets/images/paystack-logo-png_seeklogo-511548.webp',
-          ),
-          // _gwOpt(
-          //   'flutterwave',
-          //   'Flutterwave',
-          //   'Cards, Bank Transfer, Airtime',
-          //   'assets/images/Flutterwave-Symbol-500x281.webp',
-          // ),
+          for (final g in PaymentGateway.all)
+            GatewayOption(
+              gateway: g,
+              selected: gateway == g.value,
+              onTap: () => setState(() => gateway = g.value),
+            ),
           const Spacer(),
           AppButton(
             label: 'Proceed to Payment',
@@ -407,77 +405,6 @@ class _FundWalletState extends State<FundWalletScreen> {
       ),
     ),
   );
-
-  Widget _gwOpt(String value, String title, String sub, String image) =>
-      GestureDetector(
-        onTap: () => setState(() => gateway = value),
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: gateway == value ? AppColors.orange : AppColors.border,
-              width: 1.5,
-            ),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: gateway == value
-                        ? AppColors.orange
-                        : AppColors.border,
-                    width: 2,
-                  ),
-                ),
-                child: gateway == value
-                    ? Center(
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.orange,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Image.asset(image, width: 20, height: 20),
-                      Text(
-                        title,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    sub,
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      );
 }
 
 // ─── Customer Withdraw Sheet ──────────────────────────────────────────────────

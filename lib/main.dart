@@ -196,6 +196,7 @@ import 'modules/customer/reviews/vendor_reviews_screen.dart';
 import 'modules/customer/reviews/write_review_screen.dart';
 import 'modules/customer/orders/report_order_screen.dart';
 import 'modules/rider/dashboard/rider_screens.dart';
+import 'modules/rider/onboarding/rider_gate.dart';
 import 'routes/app_routes.dart';
 
 void main() async {
@@ -307,7 +308,8 @@ class _SplashScreenState extends State<_SplashScreen> {
     final rToken = await storage.getRiderToken();
 
     if (role == 'rider' && rToken != null) {
-      Get.offAllNamed(AppRoutes.riderShell);
+      // Onboarding/approval state decides where a rider lands.
+      await routeRider();
     } else if (cToken != null) {
       Get.offAllNamed(AppRoutes.customerShell);
     } else {
