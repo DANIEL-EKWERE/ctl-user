@@ -638,15 +638,18 @@ class ApiClient {
     body: {'token': fcmToken, 'platform': platform},
   );
 
+  // The live API serves tickets at `support` (GET list / POST create,
+  // GET support/{id}, POST support/{id}/reply). `support/tickets` from the
+  // Postman docs only matches the GET show route, so POSTing there fails.
   Future<Map<String, dynamic>> sendSupport(
     Map<String, dynamic> data,
     String token,
-  ) => post('support/tickets', token: token, body: data);
+  ) => post('support', token: token, body: data);
 
   Future<Map<String, dynamic>> createSupportTicket(
     Map<String, dynamic> data,
     String token,
-  ) => post('support/tickets', token: token, body: data);
+  ) => post('support', token: token, body: data);
 
   Future<Map<String, dynamic>> submitReview(
     int vendorId,
