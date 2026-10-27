@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "388203201368",
+    "project_id": "nksereke-41f90",
+    "storage_bucket": "nksereke-41f90.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:388203201368:android:1953b583bdc6b38c785b2d",
+        "android_client_info": {
+          "package_name": "com.nksereke.user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC46m-yl64r1LnyhkH8LTGQrviW-EckpOU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
