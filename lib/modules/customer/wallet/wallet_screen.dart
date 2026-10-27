@@ -274,6 +274,30 @@ class _FundWalletState extends State<FundWalletScreen> {
   bool loading = false;
   final presets = ['1000', '2000', '5000', '10000', '20000'];
 
+  /// Gateways that support wallet funding; replaced by `payment-methods`.
+  List<PaymentGateway> _gateways = PaymentGateway.all;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadGateways();
+  }
+
+  Future<void> _loadGateways() async {
+    final res = await ApiClient.instance.getPaymentMethods('wallet_funding');
+    if (!mounted || res['success'] != true) return;
+    final parsed = PaymentGateway.fromResponse(res['data']);
+    if (parsed == null) return;
+    final gateways = parsed.methods.where((m) => !m.isWallet).toList();
+    if (gateways.isEmpty) return;
+    setState(() {
+      _gateways = gateways;
+      gateway = gateways.any((g) => g.value == parsed.defaultCode)
+          ? parsed.defaultCode!
+          : gateways.first.value;
+    });
+  }
+
   Future<void> _fund() async {
     final amt = double.tryParse(_amtCtrl.text.replaceAll(',', ''));
     if (amt == null || amt < 100) {
@@ -389,7 +413,7 @@ class _FundWalletState extends State<FundWalletScreen> {
             ),
           ),
           const SizedBox(height: 8),
-          for (final g in PaymentGateway.all)
+          for (final g in _gateways)
             GatewayOption(
               gateway: g,
               selected: gateway == g.value,

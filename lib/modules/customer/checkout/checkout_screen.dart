@@ -43,6 +43,43 @@ class _CheckoutState extends State<CheckoutScreen> {
     vendorName = args['vendorName'] as String? ?? '';
     ctrl.loadCheckoutConfig();
     _loadAddresses();
+    _loadPaymentMethods();
+  }
+
+  /// Wallet + online gateways; replaced by `payment-methods` when it loads.
+  List<PaymentGateway> _methods = const [
+    PaymentGateway(
+      'wallet',
+      'Wallet Balance',
+      'Pay with your NKsereke wallet',
+      null,
+      null,
+      'wallet',
+    ),
+    ...PaymentGateway.all,
+  ];
+
+  void _select(PaymentGateway m) {
+    if (m.isWallet) {
+      payMethod = 'wallet';
+    } else {
+      payMethod = 'card';
+      gateway = m.value;
+    }
+  }
+
+  Future<void> _loadPaymentMethods() async {
+    final res = await ApiClient.instance.getPaymentMethods('order_payment');
+    if (!mounted || res['success'] != true) return;
+    final parsed = PaymentGateway.fromResponse(res['data']);
+    if (parsed == null) return;
+    setState(() {
+      _methods = parsed.methods;
+      final def = parsed.methods
+          .where((m) => m.value == parsed.defaultCode)
+          .firstOrNull;
+      if (def != null) _select(def);
+    });
   }
 
   Future<void> _loadAddresses() async {
@@ -666,39 +703,14 @@ class _CheckoutState extends State<CheckoutScreen> {
 
             // ── Payment Method ──
             _label('Payment Method'),
-            _card(
-              Column(
-                children: [
-                  _payOpt(
-                    'wallet',
-                    Icons.account_balance_wallet_outlined,
-                    'Wallet Balance',
-                    'Pay with your NKsereke wallet',
-                  ),
-                  const Divider(height: 1),
-                  _payOpt(
-                    'card',
-                    Icons.credit_card_outlined,
-                    'Pay Online',
-                    'Card, bank transfer or USSD',
-                  ),
-                  if (payMethod == 'card')
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(14, 0, 14, 6),
-                      child: Column(
-                        children: [
-                          for (final g in PaymentGateway.all)
-                            GatewayOption(
-                              gateway: g,
-                              selected: gateway == g.value,
-                              onTap: () => setState(() => gateway = g.value),
-                            ),
-                        ],
-                      ),
-                    ),
-                ],
+            for (final m in _methods)
+              GatewayOption(
+                gateway: m,
+                selected: m.isWallet
+                    ? payMethod == 'wallet'
+                    : payMethod == 'card' && gateway == m.value,
+                onTap: () => setState(() => _select(m)),
               ),
-            ),
             const SizedBox(height: 14),
 
             // ── Order Summary ──
@@ -816,69 +828,6 @@ class _CheckoutState extends State<CheckoutScreen> {
     ),
     child: child,
   );
-
-  Widget _payOpt(String value, IconData icon, String title, String sub) =>
-      GestureDetector(
-        onTap: () => setState(() => payMethod = value),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                width: 18,
-                height: 18,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: payMethod == value
-                        ? AppColors.orange
-                        : AppColors.border,
-                    width: 2,
-                  ),
-                ),
-                child: payMethod == value
-                    ? Center(
-                        child: Container(
-                          width: 8,
-                          height: 8,
-                          decoration: const BoxDecoration(
-                            color: AppColors.orange,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                      )
-                    : null,
-              ),
-              const SizedBox(width: 12),
-              Icon(icon, size: 18, color: AppColors.textSecondary),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.navy,
-                      ),
-                    ),
-                    Text(
-                      sub,
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      );
 
   Widget _sumRow(String l, String v) => Padding(
     padding: const EdgeInsets.symmetric(vertical: 5),

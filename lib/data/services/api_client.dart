@@ -561,6 +561,12 @@ class ApiClient {
   Future<Map<String, dynamic>> getAdvertisements() =>
       get('browse/advertisements');
 
+  /// Public list of payment methods (wallet + gateways) with the default.
+  /// [context]: order_payment | wallet_funding | withdrawal. No trailing
+  /// slash — `payment-methods/` answers with a 301 redirect.
+  Future<Map<String, dynamic>> getPaymentMethods(String context) =>
+      get('payment-methods', query: {'context': context});
+
   // ─── Customer ───────────────────────────────────────────────────────────
   Future<Map<String, dynamic>> getProfile(String token) =>
       get('auth/profile', token: token);

@@ -490,16 +490,59 @@ class BankAccountMenu extends StatelessWidget {
 }
 
 // ─── Payment Gateways ─────────────────────────────────────────────────────────
-/// Online payment gateways the user can choose from. [value] is what the API
-/// expects in the `gateway` field.
+/// A payment method from `GET payment-methods` (wallet or online gateway).
+/// [value] is the API `code`, sent as `gateway` / `payment_method`.
 class PaymentGateway {
   final String value;
   final String title;
   final String subtitle;
-  final String? logoAsset; // falls back to an icon when null
+  final String? logoAsset; // bundled fallback logo
+  final String? logoUrl; // logo served by the API
+  final String type; // wallet | gateway
+  final bool isDefault;
 
-  const PaymentGateway(this.value, this.title, this.subtitle, [this.logoAsset]);
+  const PaymentGateway(
+    this.value,
+    this.title,
+    this.subtitle, [
+    this.logoAsset,
+    this.logoUrl,
+    this.type = 'gateway',
+    this.isDefault = false,
+  ]);
 
+  bool get isWallet => type == 'wallet';
+
+  factory PaymentGateway.fromJson(Map<String, dynamic> j) => PaymentGateway(
+    j['code']?.toString() ?? '',
+    j['name']?.toString() ?? '',
+    j['description']?.toString() ?? '',
+    null,
+    j['logo_url']?.toString(),
+    j['type']?.toString() ?? 'gateway',
+    j['is_default'] == true || j['is_default'] == 1,
+  );
+
+  /// Parses a `payment-methods` response; null if it has no methods.
+  /// Returns the methods and the backend's default code.
+  static ({List<PaymentGateway> methods, String? defaultCode})? fromResponse(
+    dynamic body,
+  ) {
+    final raw = body is Map ? (body['methods'] ?? body['data']) : null;
+    if (raw is! List || raw.isEmpty) return null;
+    final methods = raw
+        .whereType<Map<String, dynamic>>()
+        .map(PaymentGateway.fromJson)
+        .where((m) => m.value.isNotEmpty)
+        .toList();
+    if (methods.isEmpty) return null;
+    final def =
+        body['default']?.toString() ??
+        methods.where((m) => m.isDefault).map((m) => m.value).firstOrNull;
+    return (methods: methods, defaultCode: def);
+  }
+
+  /// Used when the `payment-methods` endpoint can't be reached.
   static const all = [
     PaymentGateway('monnify', 'Monnify', 'Cards, Bank Transfer, USSD'),
     PaymentGateway(
@@ -529,6 +572,14 @@ class GatewayOption extends StatelessWidget {
     required this.selected,
     required this.onTap,
   });
+
+  Widget _fallbackIcon() => Icon(
+    gateway.isWallet
+        ? Icons.account_balance_wallet_outlined
+        : Icons.account_balance_outlined,
+    size: 20,
+    color: AppColors.navy,
+  );
 
   @override
   Widget build(BuildContext context) => GestureDetector(
@@ -573,13 +624,17 @@ class GatewayOption extends StatelessWidget {
           SizedBox(
             width: 24,
             height: 24,
-            child: gateway.logoAsset != null
+            child: gateway.logoUrl != null
+                ? AppNetworkImage(
+                    url: gateway.logoUrl,
+                    width: 24,
+                    height: 24,
+                    borderRadius: BorderRadius.circular(4),
+                    fallback: _fallbackIcon(),
+                  )
+                : gateway.logoAsset != null
                 ? Image.asset(gateway.logoAsset!, fit: BoxFit.contain)
-                : const Icon(
-                    Icons.account_balance_outlined,
-                    size: 20,
-                    color: AppColors.navy,
-                  ),
+                : _fallbackIcon(),
           ),
           const SizedBox(width: 8),
           Expanded(
